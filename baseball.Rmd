@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## EDA
 ```{r}
+library(dplyr)
+library(plyr)
 # Load team data
 team.batting.2018 <- read.csv('data/team_data/2018batting.csv')
 team.pitching.2018 <- read.csv('data/team_data/2018pitching.csv')
@@ -82,8 +84,6 @@ for (year in 2018:2022) {
 ```
 
 ```{r}
-library(dplyr)
-library(plyr)
 
 # Clean player data
 for (year in years) {
@@ -129,20 +129,20 @@ player_with_wins_combined = rbind(player_with_wins[[2018]],
                                   player_with_wins[[2021]])
 plot(W.L..y ~ Age.x, data=player_with_wins_combined,
      xlab="Batters' Average Age", ylab="Winning Percentage")
-plot(W.L..y ~ PA, data=player_with_wins_combined,
+plot(W.L..y ~ Age.y, data=player_with_wins_combined,
      xlab="Pitchers' Average Age", ylab="Winning Percentage")
 plot(W.L..y ~ BA, data=player_with_wins_combined,
      xlab="Batting Average", ylab="Winning Percentage")
 plot(W.L..y ~ HR.x, data=player_with_wins_combined,
      xlab="Average Home Runs", ylab="Winning Percentage")
-plot(W.L..y ~ H.x, data=player_with_wins_combined,
-     xlab="Average Hits", ylab="Winning Percentage")
-plot(W.L..y ~ H.y, data=player_with_wins_combined,
-     xlab="Average Hits Allowed", ylab="Winning Percentage")
+plot(W.L..y ~ OPS., data=player_with_wins_combined,
+     xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
 plot(W.L..y ~ ERA., data=player_with_wins_combined,
-     xlab="Earned Run Average", ylab="Winning Percentage")
+     xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
 plot(W.L..y ~ SO.W, data=player_with_wins_combined,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
+plot(W.L..y ~ HR9, data=player_with_wins_combined,
+     xlab="Average Hits per Nine Innings", ylab="Winning Percentage")
 plot(W.L..y ~ WHIP, data=player_with_wins_combined,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
 ```
@@ -159,8 +159,8 @@ hist(player_with_wins_combined$W.L..y, main="Distribution of Winning Percentage"
 
 ```{r}
 # Baseline Multiple Regression Model
-baseline <- lm(W.L..y ~ Age.x + PA + BA + HR.x + 
-                 H.x + H.y + ERA. + SO.W + WHIP, data = player_with_wins_combined)
+baseline <- lm(W.L..y ~ Age.x + Age.y + BA + HR.x + 
+                 OPS. + ERA. + SO.W + HR9 + WHIP, data = player_with_wins_combined)
 summary(baseline)
 ```
 
