@@ -1,0 +1,87 @@
+---
+title: 'STAT 139: Final Project'
+author: "Danny Kim, Christopher Lee, Karina Wang, Daniel Son"
+date: "2022-12-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA
+```{r}
+# Loading data
+batting2022 <- read.csv('data/2022batting.csv')
+batting2021 <- read.csv('data/2021batting.csv')
+batting2020 <- read.csv('data/2020batting.csv')
+batting2019 <- read.csv('data/2019batting.csv')
+batting2018 <- read.csv('data/2018batting.csv')
+pitching2022 <- read.csv('data/2022pitching.csv')
+pitching2021 <- read.csv('data/2021pitching.csv')
+pitching2020 <- read.csv('data/2020pitching.csv')
+pitching2019 <- read.csv('data/2019pitching.csv')
+pitching2018 <- read.csv('data/2018pitching.csv')
+```
+
+```{r}
+# data cleaning
+mlb2022 <- merge(pitching2022, batting2022,by="Tm")
+mlb2021 <- merge(pitching2021, batting2021,by="Tm")
+mlb2020 <- merge(pitching2020, batting2020,by="Tm")
+mlb2019 <- merge(pitching2019, batting2019,by="Tm")
+mlb2018 <- merge(pitching2018, batting2018,by="Tm")
+
+# split into test and train, and create total for eda
+list <- rbind(mlb2021, mlb2020, mlb2019, mlb2018)
+
+train <- subset(list, list$Tm != '' & list$Tm != 'League Average')
+drop <- c("W","L") # drop wins and losses columns
+train <- train[,!(names(train) %in% drop)]
+rownames(train) <- 1:nrow(train)
+test <- subset(mlb2022, mlb2022$Tm != '' & mlb2022$Tm != 'League Average')
+test <- test[,!(names(test) %in% drop)]
+rownames(test) <- 1:nrow(test)
+total <- rbind(test,train)
+rownames(total) <- 1:nrow(total)
+```
+
+```{r}
+# factor teams
+train$Tm <- factor(train$Tm)
+test$Tm <- factor(test$Tm)
+total$Tm <- factor(total$Tm)
+```
+
+```{r}
+# summary statistics for winpct
+summary(train$W.L.)
+
+# histogram for winpct
+hist(train$W.L., main="Distribution of Winning Percentage",
+     xlab="Winning Percentage")
+```
+```{r}
+par(mfrow=c(3,3))
+plot(train$ERA,train$W.L)
+plot(train$HR.x,train$W.L)
+plot(train$RA.G,train$W.L)
+plot(train$R.G,train$W.L)
+plot(train$BA,train$W.L)
+plot(train$H.x,train$W.L)
+plot(train$WHIP,train$W.L)
+plot(train$OBP,train$W.L)
+plot(train$OPS,train$W.L)
+```
+```{r}
+# which variables are closely correlated to W.L.
+correlation <- cor(subset(train, select=-c(Tm)))
+correlation[6,]
+```
+
+
+```{r}
+lm1 <- lm(W.L. ~ ., data=train)
+summary(lm1)
+```
+
