@@ -142,7 +142,7 @@ plot(W.L..y ~ ERA., data=player_with_wins_combined,
 plot(W.L..y ~ SO.W, data=player_with_wins_combined,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
 plot(W.L..y ~ HR9, data=player_with_wins_combined,
-     xlab="Average Hits per Nine Innings", ylab="Winning Percentage")
+     xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
 plot(W.L..y ~ WHIP, data=player_with_wins_combined,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
 ```
@@ -160,7 +160,7 @@ hist(player_with_wins_combined$W.L..y, main="Distribution of Winning Percentage"
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..y ~ Age.x + Age.y + BA + HR.x + 
-                 OPS. + ERA. + SO.W + HR9 + WHIP, data = player_with_wins_combined)
+                 OPS + ERA. + SO.W + HR9 + WHIP, data = player_with_wins_combined)
 summary(baseline)
 ```
 
