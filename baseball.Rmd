@@ -1,0 +1,114 @@
+---
+title: 'STAT 139: Final Project'
+author: "Danny Kim, Christopher Lee, Karina Wang, Daniel Son"
+date: "2022-12-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA
+```{r}
+# Load team data
+team.batting.2018 <- read.csv('data/team_data/2018batting.csv')
+team.pitching.2018 <- read.csv('data/team_data/2018pitching.csv')
+team.batting.2019 <- read.csv('data/team_data/2019batting.csv')
+team.pitching.2019 <- read.csv('data/team_data/2019pitching.csv')
+team.batting.2020 <- read.csv('data/team_data/2020batting.csv')
+team.pitching.2020 <- read.csv('data/team_data/2020pitching.csv')
+team.batting.2021 <- read.csv('data/team_data/2021batting.csv')
+team.pitching.2021 <- read.csv('data/team_data/2021pitching.csv')
+team.batting.2022 <- read.csv('data/team_data/2022batting.csv')
+team.pitching.2022 <- read.csv('data/team_data/2022pitching.csv')
+
+# Load player data
+player.batting.2015 <- read.csv('data/player_data/batting2015.csv')
+player.pitching.2015 <- read.csv('data/player_data/pitching2015.csv')
+player.batting.2016 <- read.csv('data/player_data/batting2016.csv')
+player.pitching.2016 <- read.csv('data/player_data/pitching2016.csv')
+player.batting.2017 <- read.csv('data/player_data/batting2017.csv')
+player.pitching.2017 <- read.csv('data/player_data/pitching2017.csv')
+player.batting.2018 <- read.csv('data/player_data/batting2018.csv')
+player.pitching.2018 <- read.csv('data/player_data/pitching2018.csv')
+player.batting.2019 <- read.csv('data/player_data/batting2019.csv')
+player.pitching.2019 <- read.csv('data/player_data/pitching2019.csv')
+player.batting.2020 <- read.csv('data/player_data/batting2020.csv')
+player.pitching.2020 <- read.csv('data/player_data/pitching2020.csv')
+player.batting.2021 <- read.csv('data/player_data/batting2021.csv')
+player.pitching.2021 <- read.csv('data/player_data/pitching2021.csv')
+player.batting.2022 <- read.csv('data/player_data/batting2022.csv')
+player.pitching.2022 <- read.csv('data/player_data/pitching2022.csv')
+```
+
+```{r}
+# data cleaning
+mlb2022 <- merge(team.pitching.2022, team.batting.2022,by="Tm")
+mlb2021 <- merge(team.pitching.2021, team.batting.2021,by="Tm")
+mlb2020 <- merge(team.pitching.2020, team.batting.2020,by="Tm")
+mlb2019 <- merge(team.pitching.2019, team.batting.2019,by="Tm")
+mlb2018 <- merge(team.pitching.2018, team.batting.2018,by="Tm")
+
+player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm")
+player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
+player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
+player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
+player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
+player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
+player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
+player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
+
+# split into test and train, and create total for eda
+list <- rbind(mlb2021, mlb2020, mlb2019, mlb2018)
+
+train <- subset(list, list$Tm != '' & list$Tm != 'League Average')
+drop <- c("W","L") # drop wins and losses columns
+train <- train[,!(names(train) %in% drop)]
+rownames(train) <- 1:nrow(train)
+test <- subset(mlb2022, mlb2022$Tm != '' & mlb2022$Tm != 'League Average')
+test <- test[,!(names(test) %in% drop)]
+rownames(test) <- 1:nrow(test)
+total <- rbind(test,train)
+rownames(total) <- 1:nrow(total)
+```
+
+```{r}
+# factor teams
+train$Tm <- factor(train$Tm)
+test$Tm <- factor(test$Tm)
+total$Tm <- factor(total$Tm)
+```
+
+```{r}
+# summary statistics for winpct
+summary(train$W.L.)
+
+# histogram for winpct
+hist(train$W.L., main="Distribution of Winning Percentage",
+     xlab="Winning Percentage")
+```
+```{r}
+par(mfrow=c(3,3))
+plot(train$ERA,train$W.L)
+plot(train$HR.x,train$W.L)
+plot(train$RA.G,train$W.L)
+plot(train$R.G,train$W.L)
+plot(train$BA,train$W.L)
+plot(train$H.x,train$W.L)
+plot(train$WHIP,train$W.L)
+plot(train$OBP,train$W.L)
+plot(train$OPS,train$W.L)
+```
+```{r}
+# which variables are closely correlated to W.L.
+correlation <- cor(subset(train, select=-c(Tm)))
+correlation[6,]
+```
+
+
+```{r}
+lm1 <- lm(W.L. ~ ., data=train)
+summary(lm1)
+```
+
