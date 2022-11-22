@@ -24,22 +24,15 @@ team.batting.2022 <- read.csv('data/team_data/2022batting.csv')
 team.pitching.2022 <- read.csv('data/team_data/2022pitching.csv')
 
 # Load player data
-player.batting.2015 <- read.csv('data/player_data/batting2015.csv')
-player.pitching.2015 <- read.csv('data/player_data/pitching2015.csv')
-player.batting.2016 <- read.csv('data/player_data/batting2016.csv')
-player.pitching.2016 <- read.csv('data/player_data/pitching2016.csv')
-player.batting.2017 <- read.csv('data/player_data/batting2017.csv')
-player.pitching.2017 <- read.csv('data/player_data/pitching2017.csv')
-player.batting.2018 <- read.csv('data/player_data/batting2018.csv')
-player.pitching.2018 <- read.csv('data/player_data/pitching2018.csv')
-player.batting.2019 <- read.csv('data/player_data/batting2019.csv')
-player.pitching.2019 <- read.csv('data/player_data/pitching2019.csv')
-player.batting.2020 <- read.csv('data/player_data/batting2020.csv')
-player.pitching.2020 <- read.csv('data/player_data/pitching2020.csv')
-player.batting.2021 <- read.csv('data/player_data/batting2021.csv')
-player.pitching.2021 <- read.csv('data/player_data/pitching2021.csv')
-player.batting.2022 <- read.csv('data/player_data/batting2022.csv')
-player.pitching.2022 <- read.csv('data/player_data/pitching2022.csv')
+years <- 2015:2022
+bps <- c("batting", "pitching")
+player_data <- list()
+for (year in years) {
+  player_data[[year]] <- list()
+  for (bp in bps) {
+    player_data[[year]][[bp]] <- read.csv(paste("data/player_data/", bp, year, ".csv", sep=""))
+  }
+}
 ```
 
 ```{r}
@@ -68,21 +61,71 @@ rownames(combined) <- 1:nrow(combined)
 team.train$Tm <- factor(team.train$Tm)
 team.test$Tm <- factor(team.test$Tm)
 combined$Tm <- factor(combined$Tm)
+
+team_data <- list()
+team_data[[2018]] <- team2018
+team_data[[2019]] <- team2019
+team_data[[2020]] <- team2020
+team_data[[2021]] <- team2021
+team_data[[2022]] <- team2022
+
+team_wins <- list()
+for (year in 2018:2022) {
+  team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),c("Tm", "W.L.")]
+}
 ```
 
 ```{r}
 library(dplyr)
-player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
-player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
-player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
-player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
-player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
-player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
-player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
-player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm") # test
+library(plyr)
+# Sus
+# player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
+# player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
+# player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
+# player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
+# player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
+# player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
+# player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
+# player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm") # test
+# /Sus
+for (year in years) {
+  for (bp in bps) {
+    player_data[[year]][[bp]]$year <- year
+  }
+}
 
-# 2015
-player2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop')
+
+
+# test <- player.batting.2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age),.groups = 'drop')
+
+long_team_names <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),]$Tm
+short_team_names <- c("ARI", "ATL", "BAL", "BOS", "CHC", "CHW", "CIN", "CLE", "COL", "DET",
+                      "HOU", "KCR", "LAA", "LAD", "MIA", "MIL", "MIN", "NYM", "NYY", "OAK",
+                      "PHI", "PIT", "SDP", "SFG", "SEA", "STL", "TBR", "TEX", "TOR", "WSN")
+
+agg_data <- list()
+for (year in years) {
+  agg_data[[year]] <- list()
+  for (bp in bps) {
+    quant_cols <- names(select_if(player_data[[year]][[bp]], is.numeric))
+    agg_data[[year]][[bp]] <- player_data[[year]][[bp]][, c("Tm", quant_cols)] %>% group_by(Tm) %>% summarise_all("mean")
+    agg_data[[year]][[bp]]$long_Tm <- mapvalues(agg_data[[year]][[bp]]$Tm,
+                                                from=short_team_names,
+                                                to=long_team_names)
+    agg_data[[year]][[bp]] <- agg_data[[year]][[bp]][!(agg_data[[year]][[bp]]$Tm == "TOT"),]
+  }
+}
+
+player_combo <- list()
+for (year in years) {
+  player_combo[[year]] <- merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm")
+}
+
+player_with_wins <- list()
+for (year in 2018:2021) {
+  player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.x", by.y="Tm")
+}
+
 
 # put all data frames into list
 #avg_player_age <- list(player2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
