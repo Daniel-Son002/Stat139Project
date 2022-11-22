@@ -44,71 +44,94 @@ player.pitching.2022 <- read.csv('data/player_data/pitching2022.csv')
 
 ```{r}
 # data cleaning
-mlb2022 <- merge(team.pitching.2022, team.batting.2022,by="Tm")
-mlb2021 <- merge(team.pitching.2021, team.batting.2021,by="Tm")
-mlb2020 <- merge(team.pitching.2020, team.batting.2020,by="Tm")
-mlb2019 <- merge(team.pitching.2019, team.batting.2019,by="Tm")
-mlb2018 <- merge(team.pitching.2018, team.batting.2018,by="Tm")
+team2018 <- merge(team.pitching.2018, team.batting.2018,by="Tm")
+team2019 <- merge(team.pitching.2019, team.batting.2019,by="Tm")
+team2020 <- merge(team.pitching.2020, team.batting.2020,by="Tm")
+team2021 <- merge(team.pitching.2021, team.batting.2021,by="Tm")
+team2022 <- merge(team.pitching.2022, team.batting.2022,by="Tm")
 
-player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm")
-player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
-player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
-player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
-player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
-player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
-player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
-player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
+# split into test and train, and create total for EDA
+team.list <- rbind(team2018, team2019, team2020, team2021)
 
-# split into test and train, and create total for eda
-list <- rbind(mlb2021, mlb2020, mlb2019, mlb2018)
-
-train <- subset(list, list$Tm != '' & list$Tm != 'League Average')
+team.train <- subset(team.list, team.list$Tm != '' & team.list$Tm != 'League Average')
 drop <- c("W","L") # drop wins and losses columns
-train <- train[,!(names(train) %in% drop)]
-rownames(train) <- 1:nrow(train)
-test <- subset(mlb2022, mlb2022$Tm != '' & mlb2022$Tm != 'League Average')
-test <- test[,!(names(test) %in% drop)]
-rownames(test) <- 1:nrow(test)
-total <- rbind(test,train)
-rownames(total) <- 1:nrow(total)
+team.train <- team.train[,!(names(team.train) %in% drop)]
+rownames(team.train) <- 1:nrow(team.train)
+
+team.test <- subset(team2022, team2022$Tm != '' & team2022$Tm != 'League Average')
+team.test <- team.test[,!(names(team.test) %in% drop)]
+rownames(team.test) <- 1:nrow(team.test)
+combined <- rbind(team.train, team.test)
+rownames(combined) <- 1:nrow(combined)
+
+# factor teams
+team.train$Tm <- factor(team.train$Tm)
+team.test$Tm <- factor(team.test$Tm)
+combined$Tm <- factor(combined$Tm)
 ```
 
 ```{r}
-# factor teams
-train$Tm <- factor(train$Tm)
-test$Tm <- factor(test$Tm)
-total$Tm <- factor(total$Tm)
+library(dplyr)
+player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
+player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
+player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
+player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
+player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
+player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
+player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
+player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm") # test
+
+# 2015
+player2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop')
+
+# put all data frames into list
+#avg_player_age <- list(player2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2016 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2017 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2018 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2019 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2020 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#                       player2021 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'))
+
+# merge all data frames in list
+#Reduce(function(x, y) merge(x, y, all=TRUE), avg_player_age)
+#avg_player_age %>% reduce(full_join, by='Tm')
+
+#merge(player2015 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),
+#      player2016 %>% group_by(Tm) %>% summarise(avg_age = mean(Age.x),.groups = 'drop'),)
+ 
+#View(Reduce(function(x, y) merge(x, y, all=TRUE), avg_player_age))
 ```
 
 ```{r}
 # summary statistics for winpct
-summary(train$W.L.)
+summary(team.train$W.L.)
 
 # histogram for winpct
-hist(train$W.L., main="Distribution of Winning Percentage",
+hist(team.train$W.L., main="Distribution of Winning Percentage",
      xlab="Winning Percentage")
 ```
 ```{r}
 par(mfrow=c(3,3))
-plot(train$ERA,train$W.L)
-plot(train$HR.x,train$W.L)
-plot(train$RA.G,train$W.L)
-plot(train$R.G,train$W.L)
-plot(train$BA,train$W.L)
-plot(train$H.x,train$W.L)
-plot(train$WHIP,train$W.L)
-plot(train$OBP,train$W.L)
-plot(train$OPS,train$W.L)
+plot(team.train$ERA, team.train$W.L)
+plot(team.train$HR.x, team.train$W.L)
+plot(team.train$RA.G, team.train$W.L)
+plot(team.train$R.G, team.train$W.L)
+plot(team.train$BA, team.train$W.L)
+plot(team.train$H.x, team.train$W.L)
+plot(team.train$WHIP, team.train$W.L)
+plot(team.train$OBP, team.train$W.L)
+plot(team.train$OPS, team.train$W.L)
 ```
 ```{r}
 # which variables are closely correlated to W.L.
-correlation <- cor(subset(train, select=-c(Tm)))
+correlation <- cor(subset(team.train, select=-c(Tm)))
 correlation[6,]
 ```
 
 
 ```{r}
-lm1 <- lm(W.L. ~ ., data=train)
+lm1 <- lm(W.L. ~ ., data=team.train)
 summary(lm1)
 ```
 
