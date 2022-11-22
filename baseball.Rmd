@@ -11,17 +11,35 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## EDA
 ```{r}
-# Loading data
-batting2022 <- read.csv('data/2022batting.csv')
-batting2021 <- read.csv('data/2021batting.csv')
-batting2020 <- read.csv('data/2020batting.csv')
-batting2019 <- read.csv('data/2019batting.csv')
-batting2018 <- read.csv('data/2018batting.csv')
-pitching2022 <- read.csv('data/2022pitching.csv')
-pitching2021 <- read.csv('data/2021pitching.csv')
-pitching2020 <- read.csv('data/2020pitching.csv')
-pitching2019 <- read.csv('data/2019pitching.csv')
-pitching2018 <- read.csv('data/2018pitching.csv')
+# Load team data
+team.batting.2018 <- read.csv('data/team_data/2018batting.csv')
+team.pitching.2018 <- read.csv('data/team_data/2018pitching.csv')
+team.batting.2019 <- read.csv('data/team_data/2019batting.csv')
+team.pitching.2019 <- read.csv('data/team_data/2019pitching.csv')
+team.batting.2020 <- read.csv('data/team_data/2020batting.csv')
+team.pitching.2020 <- read.csv('data/team_data/2020pitching.csv')
+team.batting.2021 <- read.csv('data/team_data/2021batting.csv')
+team.pitching.2021 <- read.csv('data/team_data/2021pitching.csv')
+team.batting.2022 <- read.csv('data/team_data/2022batting.csv')
+team.pitching.2022 <- read.csv('data/team_data/2022pitching.csv')
+
+# Load player data
+player.batting.2015 <- read.csv('data/player_data/batting2015.csv')
+player.pitching.2015 <- read.csv('data/player_data/pitching2015.csv')
+player.batting.2016 <- read.csv('data/player_data/batting2016.csv')
+player.pitching.2016 <- read.csv('data/player_data/pitching2016.csv')
+player.batting.2017 <- read.csv('data/player_data/batting2017.csv')
+player.pitching.2017 <- read.csv('data/player_data/pitching2017.csv')
+player.batting.2018 <- read.csv('data/player_data/batting2018.csv')
+player.pitching.2018 <- read.csv('data/player_data/pitching2018.csv')
+player.batting.2019 <- read.csv('data/player_data/batting2019.csv')
+player.pitching.2019 <- read.csv('data/player_data/pitching2019.csv')
+player.batting.2020 <- read.csv('data/player_data/batting2020.csv')
+player.pitching.2020 <- read.csv('data/player_data/pitching2020.csv')
+player.batting.2021 <- read.csv('data/player_data/batting2021.csv')
+player.pitching.2021 <- read.csv('data/player_data/pitching2021.csv')
+player.batting.2022 <- read.csv('data/player_data/batting2022.csv')
+player.pitching.2022 <- read.csv('data/player_data/pitching2022.csv')
 ```
 
 ```{r}
