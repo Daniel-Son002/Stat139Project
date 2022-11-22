@@ -156,6 +156,11 @@ hist(player_with_wins_combined$W.L..y, main="Distribution of Winning Percentage"
      xlab="Winning Percentage")
 ```
 
+```{r}
+# Correlation matrix
+cor(player_with_wins_combined[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
+```
+
 
 ```{r}
 # Baseline Multiple Regression Model
@@ -169,3 +174,4 @@ summary(baseline)
 # Asssess Linear Model Assumptions
 plot(baseline, which=c(1,2))
 ```
+
