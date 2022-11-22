@@ -44,11 +44,20 @@ player.pitching.2022 <- read.csv('data/player_data/pitching2022.csv')
 
 ```{r}
 # data cleaning
-mlb2022 <- merge(pitching2022, batting2022,by="Tm")
-mlb2021 <- merge(pitching2021, batting2021,by="Tm")
-mlb2020 <- merge(pitching2020, batting2020,by="Tm")
-mlb2019 <- merge(pitching2019, batting2019,by="Tm")
-mlb2018 <- merge(pitching2018, batting2018,by="Tm")
+mlb2022 <- merge(team.pitching.2022, team.batting.2022,by="Tm")
+mlb2021 <- merge(team.pitching.2021, team.batting.2021,by="Tm")
+mlb2020 <- merge(team.pitching.2020, team.batting.2020,by="Tm")
+mlb2019 <- merge(team.pitching.2019, team.batting.2019,by="Tm")
+mlb2018 <- merge(team.pitching.2018, team.batting.2018,by="Tm")
+
+player2022 <- merge(player.pitching.2022, player.pitching.2022,by="Tm")
+player2021 <- merge(player.pitching.2021, player.pitching.2021,by="Tm")
+player2020 <- merge(player.pitching.2020, player.pitching.2020,by="Tm")
+player2019 <- merge(player.pitching.2019, player.pitching.2019,by="Tm")
+player2018 <- merge(player.pitching.2018, player.pitching.2018,by="Tm")
+player2017 <- merge(player.pitching.2017, player.pitching.2017,by="Tm")
+player2016 <- merge(player.pitching.2016, player.pitching.2016,by="Tm")
+player2015 <- merge(player.pitching.2015, player.pitching.2015,by="Tm")
 
 # split into test and train, and create total for eda
 list <- rbind(mlb2021, mlb2020, mlb2019, mlb2018)
