@@ -158,8 +158,6 @@ plot(W.L..next_year ~ HR.bat, data=train.df,
      xlab="Average Home Runs", ylab="Winning Percentage")
 plot(W.L..next_year ~ OPSplus, data=train.df,
      xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
-plot(W.L..next_year ~ ERAplus, data=train.df,
-     xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
 plot(W.L..next_year ~ SO.W, data=train.df,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
 plot(W.L..next_year ~ HR9, data=train.df,
@@ -185,15 +183,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERAplus + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
+                 OPS + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
 summary(baseline)
 ```
 
@@ -211,6 +209,7 @@ RMSE = function(y,yhat){
 }
 baseline.trainRMSE = RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
 baseline.testRMSE = RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+baseline.adjrsq = summary(baseline)$adj.r.squared
 ```
 
 ## Linear Regression
@@ -223,30 +222,32 @@ colnames(train.df)
 # full linear regression models
 
 # ignore Rk.bat, R.bat, RBI, year.bat, year_adj.bat, W, L, R.pitch, year.pitch
-# year_adj.pitch, Rk, Age, WL..next_year, year, year_adj, 
+# year_adj.pitch, Rk, WL..next_year, year, year_adj, ERA, ERAplus
 # Rtot, Rtot.yr, Rdrs, Rgood (hard to interpret)
 lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                GF + SHO + SV + IP + H.pitch + HR.pitch + 
                 BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
-                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas,
               data = train.df)
 lmfull.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
 lmfull.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+lmfull.adjrsq = summary(lm.full)$adj.r.squared
 
 lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                GF + SHO + SV + IP + H.pitch + HR.pitch + 
                 BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
-                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
 lmfullinteraction.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
 lmfullinteraction.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+lmfullinteraction.adjrsq = summary(lm.fullinteraction)$adj.r.squared
 ```
 
 ```{r}
@@ -264,6 +265,7 @@ yhats.full.train = predict(ridges.full, X.full)
 residuals.full.train = (train.df$W.L..next_year - yhats.full.train)^2
 RMSE.ridges.full.train = sqrt(apply(residuals.full.train, 2, sum)/nrow(train.df))
 ridgesfull.trainRMSE = min(RMSE.ridges.full.train) # train RMSE
+#ridgesfull.adjrsq = summary(ridges.full)$adj.r.squared
 #ridges.full$lambda[which.min(RMSE.ridges.full.train)] # best lambda
 
 yhats.full.test = predict(ridges.full, X.full.test)
