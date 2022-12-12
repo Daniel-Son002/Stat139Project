@@ -146,7 +146,7 @@ names(train.df)
 
 ```{r}
 # Explore Potential Predictors
-par(mfrow=c(3,3))
+par(mfrow=c(3,4))
 plot(W.L..next_year ~ Age.bat, data=train.df,
      xlab="Batters' Average Age", ylab="Winning Percentage")
 plot(W.L..next_year ~ Age.pitch, data=train.df,
@@ -165,11 +165,12 @@ plot(W.L..next_year ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
 plot(W.L..next_year ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
-```
-
-```{r}
-plot(W.L..next_year ~ tot_fa_war3, data=train.df)
-plot(W.L..next_year ~ num_fas, data=train.df)
+plot(W.L..next_year ~ tot_fa_war3, data=train.df,
+     xlab="Total Free Agent WAR3", ylab="Winning Percentage")
+plot(W.L..next_year ~ E, data=train.df,
+     xlab="Errors", ylab="Winning Percentage")
+plot(W.L..next_year ~ Fld., data=train.df,
+     xlab="Fielding%", ylab="Winning Percentage")
 ```
 
 ```{r}
@@ -183,15 +184,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERAplus + SO.W + HR9 + WHIP, data = train.df)
+                 OPS + ERAplus + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
 summary(baseline)
 ```
 
@@ -224,7 +225,7 @@ set.seed(139)
 library(rpart)
 
 RMSE = function(y,yhat){
-return(sqrt(mean((y-yhat)^2)))
+  return(sqrt(mean((y-yhat)^2)))
 }
 
 test.df = subset(test.df, test.df$Tm != 'CLE')
@@ -257,8 +258,8 @@ RMSEs = rep(NA,nrow(pars))
 bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
 
 for(i in 1:nrow(pars)){
-  rftemp = randomForest(W.L..next_year ~.,data=train.df,
-                        mtry=pars$mtry[i],maxnodes=pars$maxnodes[i],ntree=ntree)
+  rftemp = randomForest(W.L..next_year ~ .,data=train.df,
+                        mtry=pars$mtry[i], maxnodes=pars$maxnodes[i], ntree=ntree)
   RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
   if(RMSEs[i]<bestRMSE){
     best_maxnodes = maxnodes[i]
