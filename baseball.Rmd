@@ -104,8 +104,10 @@ n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
 train.df = player_with_wins_combined[train.rows,]
 colnames(train.df)[colnames(train.df) == 'OPS.'] <- 'OPSplus'
+colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
 test.df = player_with_wins_combined[-train.rows,]
 colnames(test.df)[colnames(test.df) == 'OPS.'] <- 'OPSplus'
+colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
 ```
 
 ```{r}
@@ -125,9 +127,9 @@ plot(W.L..next_year ~ BA, data=train.df,
      xlab="Batting Average", ylab="Winning Percentage")
 plot(W.L..next_year ~ HR.bat, data=train.df,
      xlab="Average Home Runs", ylab="Winning Percentage")
-plot(W.L..next_year ~ OPS., data=train.df,
+plot(W.L..next_year ~ OPSplus, data=train.df,
      xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
-plot(W.L..next_year ~ ERA., data=train.df,
+plot(W.L..next_year ~ ERAplus, data=train.df,
      xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
 plot(W.L..next_year ~ SO.W, data=train.df,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
@@ -148,15 +150,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERA. + SO.W + HR9 + WHIP, data = train.df)
+                 OPS + ERAplus + SO.W + HR9 + WHIP, data = train.df)
 summary(baseline)
 ```
 
@@ -166,5 +168,50 @@ summary(baseline)
 plot(baseline, which=c(1,2))
 ```
 
+## Decision Tree/Random Forest
+```{r}
+set.seed(139)
+library(rpart)
 
+RMSE = function(y,yhat){
+return(sqrt(mean((y-yhat)^2)))
+}
 
+test.df = subset(test.df, test.df$Tm != 'CLE')
+tree1 = rpart(W.L..next_year~.,data=train.df, control = list(minsplit=1,cp=0,maxdepth=20))
+yhat.tree1.train = predict(tree1)
+yhat.tree1.test = predict(tree1, newdata = test.df)
+RMSE.tree1.train = RMSE(train.df$W.L..next_year,yhat.tree1.train)
+RMSE.tree1.test = RMSE(test.df$W.L..next_year,yhat.tree1.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.tree1.test)
+```
+
+```{r}
+best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
+tree2 = prune(tree1,best.cp)
+yhat.tree2.train = predict(tree2)
+yhat.tree2.test = predict(tree2,newdata=test.df)
+RMSE.tree2.train = RMSE(train.df$W.L..next_yea,yhat.tree2.train)
+RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
+data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
+```
+
+```{r}
+library(randomForest)
+set.seed(139)
+maxnodes1 = maxnodes = c(10,20,50,100)
+ntree=200
+rmses.rf1 = rep(NA,length(maxnodes))
+bestRMSE = sd(train.df$W.L..next_year)
+# for(i in 1:length(maxnodes)){
+#   rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
+#   rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
+#   if(rmses.rf1[i]<bestRMSE){
+#     best_maxnodes = maxnodes[i]
+#     bestRMSE=rmses.rf1[i]
+#     rf1=rftemp
+#   }
+# }
+
+data.frame(maxnodes=maxnodes,RMSE=rmses.rf1)
+```
