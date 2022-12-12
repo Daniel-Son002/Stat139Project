@@ -19,7 +19,8 @@ drop = c("W", "L")
 for (year in 1997:2022) {
   df1 = read.csv(paste("data/teams_data/batting", year, ".csv", sep=""))
   df2 = read.csv(paste("data/teams_data/pitching", year, ".csv", sep=""))
-  df_tot = merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch"))
+  df3 = read.csv(paste("data/teams_data/fielding", year, ".csv", sep=""))
+  df_tot = merge(merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch")), df3, by="Tm", suffixes=c("", ".field"))
   
   df_tot = df_tot[
     !(df_tot$Tm %in% c("", "League Average")),
