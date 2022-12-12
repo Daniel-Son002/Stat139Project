@@ -19,7 +19,7 @@ drop = c("W", "L")
 for (year in 1997:2022) {
   df1 = read.csv(paste("data/teams_data/batting", year, ".csv", sep=""))
   df2 = read.csv(paste("data/teams_data/pitching", year, ".csv", sep=""))
-  df_tot = merge(df1, df2, by="Tm")
+  df_tot = merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch"))
   
   df_tot = df_tot[
     !(df_tot$Tm %in% c("", "League Average")),
@@ -50,38 +50,6 @@ for (year in years) {
 
 ```{r}
 # Data Cleaning for the Team Data
-team2018 <- merge(team.pitching.2018, team.batting.2018,by="Tm")
-team2019 <- merge(team.pitching.2019, team.batting.2019,by="Tm")
-team2020 <- merge(team.pitching.2020, team.batting.2020,by="Tm")
-team2021 <- merge(team.pitching.2021, team.batting.2021,by="Tm")
-team2022 <- merge(team.pitching.2022, team.batting.2022,by="Tm")
-
-team.list <- rbind(team2018, team2019, team2020, team2021)
-
-# Drop empty and unrelated rows
-team.train <- subset(team.list, team.list$Tm != '' & team.list$Tm != 'League Average')
-drop <- c("W","L") # Drop wins and losses columns
-team.train <- team.train[,!(names(team.train) %in% drop)]
-rownames(team.train) <- 1:nrow(team.train)
-
-team.test <- subset(team2022, team2022$Tm != '' & team2022$Tm != 'League Average')
-team.test <- team.test[,!(names(team.test) %in% drop)]
-rownames(team.test) <- 1:nrow(team.test)
-combined <- rbind(team.train, team.test)
-rownames(combined) <- 1:nrow(combined)
-
-# Factor teams
-team.train$Tm <- factor(team.train$Tm)
-team.test$Tm <- factor(team.test$Tm)
-combined$Tm <- factor(combined$Tm)
-
-# team_data <- list()
-# team_data[[2018]] <- team2018
-# team_data[[2019]] <- team2019
-# team_data[[2020]] <- team2020
-# team_data[[2021]] <- team2021
-# team_data[[2022]] <- team2022
-
 team_wins <- list()
 for (year in years) {
   team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),c("Tm", "W.L.")]
@@ -133,55 +101,57 @@ n.rows = nrow(player_with_wins_combined)
 n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
 train.df = player_with_wins_combined[train.rows,]
-train.df = player_with_wins_combined[~train.rows,]
+test.df = player_with_wins_combined[-train.rows,]
 ```
 
-
+```{r}
+train.df
+```
 
 
 ```{r}
 # Explore Potential Predictors
 par(mfrow=c(3,3))
-plot(W.L..y ~ Age.x, data=player_with_wins_combined,
+plot(W.L..pitch ~ Age.bat, data=train.df,
      xlab="Batters' Average Age", ylab="Winning Percentage")
-plot(W.L..y ~ Age.y, data=player_with_wins_combined,
+plot(W.L..y ~ Age.y, data=train.df,
      xlab="Pitchers' Average Age", ylab="Winning Percentage")
-plot(W.L..y ~ BA, data=player_with_wins_combined,
+plot(W.L..y ~ BA, data=train.df,
      xlab="Batting Average", ylab="Winning Percentage")
-plot(W.L..y ~ HR.x, data=player_with_wins_combined,
+plot(W.L..y ~ HR.x, data=train.df,
      xlab="Average Home Runs", ylab="Winning Percentage")
-plot(W.L..y ~ OPS., data=player_with_wins_combined,
+plot(W.L..y ~ OPS., data=train.df,
      xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
-plot(W.L..y ~ ERA., data=player_with_wins_combined,
+plot(W.L..y ~ ERA., data=train.df,
      xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
-plot(W.L..y ~ SO.W, data=player_with_wins_combined,
+plot(W.L..y ~ SO.W, data=train.df,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
-plot(W.L..y ~ HR9, data=player_with_wins_combined,
+plot(W.L..y ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
-plot(W.L..y ~ WHIP, data=player_with_wins_combined,
+plot(W.L..y ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
 ```
 
 ```{r}
 # Summary statistics for winpct
-summary(player_with_wins_combined$W.L..y)
+summary(train.df$W.L..y)
 
 # Histogram for winpct
-hist(player_with_wins_combined$W.L..y, main="Distribution of Winning Percentage",
+hist(train.df$W.L..y, main="Distribution of Winning Percentage",
      xlab="Winning Percentage")
 ```
 
 ```{r}
 # Correlation matrix
-cor(player_with_wins_combined[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
-cor(player_with_wins_combined[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
+cor(train.df[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..y ~ Age.x + Age.y + BA + HR.x + 
-                 OPS + ERA. + SO.W + HR9 + WHIP, data = player_with_wins_combined)
+                 OPS + ERA. + SO.W + HR9 + WHIP, data = train.df)
 summary(baseline)
 ```
 
