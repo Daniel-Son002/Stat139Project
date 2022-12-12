@@ -123,6 +123,10 @@ for (year in 1997:2021) {
 player_with_wins_combined = bind_rows(player_with_wins_fa, )
 player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
+
+drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm")
+player_with_wins_combined = player_with_wins_combined[, !(names(player_with_wins_combined) %in% drop_cols)]
+
 n.rows = nrow(player_with_wins_combined)
 n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
@@ -161,6 +165,11 @@ plot(W.L..next_year ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
 plot(W.L..next_year ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
+```
+
+```{r}
+plot(W.L..next_year ~ tot_fa_war3, data=train.df)
+plot(W.L..next_year ~ num_fas, data=train.df)
 ```
 
 ```{r}
