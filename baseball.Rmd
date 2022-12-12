@@ -111,7 +111,7 @@ colnames(train.df)[colnames(train.df) == 'OPS.'] <- 'OPSplus'
 colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
 test.df = player_with_wins_combined[-train.rows,]
 colnames(test.df)[colnames(test.df) == 'OPS.'] <- 'OPSplus'
-colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
+colnames(test.df)[colnames(test.df) == 'ERA.'] <- 'ERAplus'
 ```
 
 ```{r}
@@ -224,15 +224,15 @@ maxnodes1 = maxnodes = c(10,20,50,100)
 ntree=200
 rmses.rf1 = rep(NA,length(maxnodes))
 bestRMSE = sd(train.df$W.L..next_year)
-# for(i in 1:length(maxnodes)){
-#   rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
-#   rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
-#   if(rmses.rf1[i]<bestRMSE){
-#     best_maxnodes = maxnodes[i]
-#     bestRMSE=rmses.rf1[i]
-#     rf1=rftemp
-#   }
-# }
+for(i in 1:length(maxnodes)){
+  rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
+  rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
+  if(rmses.rf1[i]<bestRMSE){
+    best_maxnodes = maxnodes[i]
+    bestRMSE=rmses.rf1[i]
+    rf1=rftemp
+  }
+}
 
 data.frame(maxnodes=maxnodes,RMSE=rmses.rf1)
 ```
