@@ -19,7 +19,8 @@ drop = c("W", "L")
 for (year in 1997:2022) {
   df1 = read.csv(paste("data/teams_data/batting", year, ".csv", sep=""))
   df2 = read.csv(paste("data/teams_data/pitching", year, ".csv", sep=""))
-  df_tot = merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch"))
+  df3 = read.csv(paste("data/teams_data/fielding", year, ".csv", sep=""))
+  df_tot = merge(merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch")), df3, by="Tm", suffixes=c("", ".field"))
   
   df_tot = df_tot[
     !(df_tot$Tm %in% c("", "League Average")),
@@ -32,7 +33,7 @@ for (year in 1997:2022) {
 
 # Load player data
 years <- 1997:2022
-bps <- c("batting", "pitching")
+bps <- c("batting", "pitching", "fielding")
 player_data <- list()
 for (year in years) {
   player_data[[year]] <- list()
@@ -46,13 +47,19 @@ for (year in years) {
     }
   }
 }
+
+fa_data = list()
+for (year in years) {
+  fa_data[[year]] = read.csv(paste("data/fa_data/fa", year, ".csv", sep=""))
+  fa_data[[year]]$WAR3[is.na(fa_data[[year]]$WAR3)] = 0
+}
 ```
 
 ```{r}
 # Data Cleaning for the Team Data
 team_wins <- list()
 for (year in years) {
-  team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),c("Tm", "W.L.")]
+  team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")), c("Tm", "W.L.")]
 }
 ```
 
@@ -62,6 +69,7 @@ for (year in years) {
 for (year in years) {
   for (bp in bps) {
     player_data[[year]][[bp]]$year <- year
+    player_data[[year]][[bp]]$year_adj <- year - 1997
   }
 }
 
@@ -92,7 +100,12 @@ for (year in years) {
 
 player_combo <- list()
 for (year in years) {
-  player_combo[[year]] <- merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm", suffixes=c(".bat", ".pitch"))
+  player_combo[[year]] <- merge(merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm", suffixes=c(".bat", ".pitch")), agg_data[[year]][[bps[3]]], by="Tm", suffixes=c("", ".field"))
+}
+
+agg_fa_data <- list()
+for (year in years) {
+  agg_fa_data[[year]] = fa_data[[year]] %>% group_by(To.Team) %>% summarise(tot_fa_war3=sum(WAR3), num_fas=n())
 }
 
 # add response variable to player data
@@ -100,7 +113,14 @@ player_with_wins <- list()
 for (year in 1997:2021) {
   player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.pitch", by.y="Tm", suffixes=c(".same_year", ".next_year"))
 }
-player_with_wins_combined = bind_rows(player_with_wins, )
+
+player_with_wins_fa <- list()
+for (year in 1997:2021) {
+  player_with_wins_fa[[year]] <- merge(player_with_wins[[year]], agg_fa_data[[year]], by.x="long_Tm.pitch", by.y="To.Team")
+}
+
+
+player_with_wins_combined = bind_rows(player_with_wins_fa, )
 player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
 n.rows = nrow(player_with_wins_combined)
@@ -220,19 +240,30 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r}
 library(randomForest)
 set.seed(139)
-maxnodes1 = maxnodes = c(10,20,50,100)
+maxnodes = c(50,200,500)
+mtry = c(10, 20, 40, 50, 60)
 ntree=200
-rmses.rf1 = rep(NA,length(maxnodes))
-bestRMSE = sd(train.df$W.L..next_year)
-for(i in 1:length(maxnodes)){
-  rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
-  rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
-  if(rmses.rf1[i]<bestRMSE){
+pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
+RMSEs = rep(NA,nrow(pars))
+bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
+
+for(i in 1:nrow(pars)){
+  rftemp = randomForest(W.L..next_year ~.,data=train.df,
+                        mtry=pars$mtry[i],maxnodes=pars$maxnodes[i],ntree=ntree)
+  RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
+  if(RMSEs[i]<bestRMSE){
     best_maxnodes = maxnodes[i]
-    bestRMSE=rmses.rf1[i]
+    bestRMSE=RMSEs[i]
     rf1=rftemp
   }
 }
+data.frame(maxnodes=pars$maxnodes,mtry=pars$mtry,RMSE=RMSEs)
+pars[which(RMSEs==bestRMSE),]
 
-data.frame(maxnodes=maxnodes,RMSE=rmses.rf1)
+yhat.rf1.train = predict(rf1)
+yhat.rf1.test = predict(rf1, newdata = test.df)
+RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
+RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 ```
+
