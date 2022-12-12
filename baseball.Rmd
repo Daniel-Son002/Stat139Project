@@ -158,8 +158,6 @@ plot(W.L..next_year ~ HR.bat, data=train.df,
      xlab="Average Home Runs", ylab="Winning Percentage")
 plot(W.L..next_year ~ OPSplus, data=train.df,
      xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
-plot(W.L..next_year ~ ERAplus, data=train.df,
-     xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
 plot(W.L..next_year ~ SO.W, data=train.df,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
 plot(W.L..next_year ~ HR9, data=train.df,
@@ -185,15 +183,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERAplus + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
+                 OPS + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
 summary(baseline)
 ```
 
@@ -209,8 +207,9 @@ RMSE = function(y,yhat){
   SSE = sum((y-yhat)^2)
   return(sqrt(SSE/length(y)))  
 }
-RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
-RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+baseline.trainRMSE = RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
+baseline.testRMSE = RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+baseline.adjrsq = summary(baseline)$adj.r.squared
 ```
 
 ## Linear Regression
@@ -223,34 +222,176 @@ colnames(train.df)
 # full linear regression models
 
 # ignore Rk.bat, R.bat, RBI, year.bat, year_adj.bat, W, L, R.pitch, year.pitch
-# year_adj.pitch, Rk, Age, WL..next_year, year, year_adj, 
+# year_adj.pitch, Rk, WL..next_year, year, year_adj, ERA, ERAplus
 # Rtot, Rtot.yr, Rdrs, Rgood (hard to interpret)
 lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                GF + SHO + SV + IP + H.pitch + HR.pitch + 
                 BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
-                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas,
               data = train.df)
-RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
-RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+lmfull.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
+lmfull.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+lmfull.adjrsq = summary(lm.full)$adj.r.squared
 
 lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                GF + SHO + SV + IP + H.pitch + HR.pitch + 
                 BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
-                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
-RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
-RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+lmfullinteraction.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
+lmfullinteraction.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+lmfullinteraction.adjrsq = summary(lm.fullinteraction)$adj.r.squared
 ```
 
 ```{r}
-summary(lm.full)
+# Ridge Regression
+
+library(glmnet)
+# regularize full model
+X.full = model.matrix(lm.full)[,-1] # drop intercept
+ridges.full = glmnet(X.full, train.df$W.L..next_year, alpha=0, 
+                     lambda=10^seq(-4, 4, 0.1))
+lm.full.test = lm(formula(lm.full), test.df)
+X.full.test = model.matrix(lm.full.test)[,-1] # drop intercept
+
+yhats.full.train = predict(ridges.full, X.full)
+residuals.full.train = (train.df$W.L..next_year - yhats.full.train)^2
+RMSE.ridges.full.train = sqrt(apply(residuals.full.train, 2, sum)/nrow(train.df))
+ridgesfull.trainRMSE = min(RMSE.ridges.full.train) # train RMSE
+#ridgesfull.adjrsq = summary(ridges.full)$adj.r.squared
+#ridges.full$lambda[which.min(RMSE.ridges.full.train)] # best lambda
+
+yhats.full.test = predict(ridges.full, X.full.test)
+residuals.full.test = (test.df$W.L..next_year - yhats.full.test)^2
+RMSE.ridges.full.test = sqrt(apply(residuals.full.test, 2, sum)/nrow(test.df))
+#plot(RMSE.ridges.full.test~log(ridges.full$lambda, 10), type='l')
+ridgesfull.testRMSE = min(RMSE.ridges.full.test) # test RMSE
+ridges.full$lambda[which.min(RMSE.ridges.full.test)] # best lambda
+```
+
+```{r}
+matplot(log(ridges.full$lambda), t(ridges.full$beta), type="l", 
+        main="Ridge Full Beta Estimate Trajectory", xlab="log(lambda)", ylab="betas")
+#legend("right", colnames(X.full), col=1:59, lwd=2, cex=0.5)
+```
+
+```{r}
+# regularize full interaction model
+X.fullinteraction = model.matrix(lm.fullinteraction)[,-1] # drop intercept
+ridges.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=0, 
+                     lambda=10^seq(-4, 4, 0.1))
+lm.fullinteraction.test = lm(formula(lm.fullinteraction), test.df)
+X.fullinteraction.test = model.matrix(lm.fullinteraction.test)[,-1] # drop intercept
+
+yhats.fullinteraction.train = predict(ridges.fullinteraction, X.fullinteraction)
+residuals.fullinteraction.train = (train.df$W.L..next_year - yhats.fullinteraction.train)^2
+RMSE.ridges.fullinteraction.train = sqrt(apply(residuals.fullinteraction.train, 2, sum)/nrow(train.df))
+ridgesfullinteraction.trainRMSE = min(RMSE.ridges.fullinteraction.train) # train RMSE
+#ridges.full$lambda[which.min(RMSE.ridges.full.train)] # best lambda
+
+yhats.fullinteraction.test = predict(ridges.fullinteraction, X.fullinteraction.test)
+residuals.fullinteraction.test = (test.df$W.L..next_year - yhats.fullinteraction.test)^2
+RMSE.ridges.fullinteraction.test = sqrt(apply(residuals.fullinteraction.test, 2, sum)/nrow(test.df))
+plot(RMSE.ridges.fullinteraction.test~log(ridges.fullinteraction$lambda, 10), type='l')
+ridgesfullinteraction.testRMSE = min(RMSE.ridges.fullinteraction.test) # test RMSE
+ridges.fullinteraction$lambda[which.min(RMSE.ridges.fullinteraction.test)] # best lambda
+```
+
+```{r}
+matplot(log(ridges.fullinteraction$lambda), t(ridges.fullinteraction$beta), type="l", 
+        main="Ridge Full Interaction Beta Estimate Trajectory", xlab="log(lambda)", ylab="betas")
+```
+
+```{r}
+# Lasso Regression
+# regularize full model
+lassos.full = glmnet(X.full, train.df$W.L..next_year, alpha=1, 
+                     lambda=10^seq(-4, 4, 0.1))
+yhats.full.train = predict(lassos.full, X.full)
+residuals.full.train = (train.df$W.L..next_year - yhats.full.train)^2
+RMSE.lassos.full.train = sqrt(apply(residuals.full.train, 2, sum)/nrow(train.df))
+lassosfull.trainRMSE = min(RMSE.lassos.full.train) # train RMSE
+#lassos.full$lambda[which.min(RMSE.lassos.full.train)] # best lambda
+
+yhats.full.test = predict(lassos.full, X.full.test)
+residuals.full.test = (test.df$W.L..next_year - yhats.full.test)^2
+RMSE.lassos.full.test = sqrt(apply(residuals.full.test, 2, sum)/nrow(test.df))
+plot(RMSE.lassos.full.test~log(ridges.full$lambda, 10), type='l')
+lassosfull.testRMSE = min(RMSE.lassos.full.test) # test RMSE
+lassos.full$lambda[which.min(RMSE.lassos.full.test)] # best lambda
+```
+
+```{r}
+matplot(log(lassos.full$lambda), t(lassos.full$beta), type="l", 
+        main="LASSO Full Beta Estimate Trajectory", xlab="log(lambda)", ylab="betas")
+```
+
+```{r}
+# regularize full interaction model
+X.fullinteraction = model.matrix(lm.fullinteraction)[,-1] # drop intercept
+lassos.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=1, 
+                     lambda=10^seq(-4, 4, 0.1))
+lm.fullinteraction.test = lm(formula(lm.fullinteraction), test.df)
+X.fullinteraction.test = model.matrix(lm.fullinteraction.test)[,-1] # drop intercept
+
+yhats.fullinteraction.train = predict(lassos.fullinteraction, X.fullinteraction)
+residuals.fullinteraction.train = (train.df$W.L..next_year - yhats.fullinteraction.train)^2
+RMSE.lassos.fullinteraction.train = sqrt(apply(residuals.fullinteraction.train, 2, sum)/nrow(train.df))
+lassosfullinteraction.trainRMSE = min(RMSE.lassos.fullinteraction.train) # train RMSE
+#lassos.full$lambda[which.min(RMSE.lassos.fullinteraction.train)] # best lambda
+
+yhats.fullinteraction.test = predict(lassos.fullinteraction, X.fullinteraction.test)
+residuals.fullinteraction.test = (test.df$W.L..next_year - yhats.fullinteraction.test)^2
+RMSE.lassos.fullinteraction.test = sqrt(apply(residuals.fullinteraction.test, 2, sum)/nrow(test.df))
+plot(RMSE.lassos.fullinteraction.test~log(lassos.fullinteraction$lambda, 10), type='l')
+lassosfullinteraction.testRMSE = min(RMSE.lassos.fullinteraction.test) # test RMSE
+lassos.fullinteraction$lambda[which.min(RMSE.lassos.fullinteraction.test)] # best lambda
+```
+
+```{r}
+matplot(log(lassos.fullinteraction$lambda), t(lassos.fullinteraction$beta), type="l", 
+        main="LASSO Full Interaction Beta Estimate Trajectory", xlab="log(lambda)", ylab="betas")
+```
+
+```{r}
+# Stepwise
+lm.step = step(lm.full, scope=c(lower=formula(W.L..next_year~1), 
+                                upper=lm.fullinteraction), trace=0, direction="both")
+formula(lm.step)
+lmstep.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.step, newdata=train.df))
+lmstep.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.step, newdata=test.df))
+```
+
+```{r}
+# model comparison
+RMSE.df = data.frame(trainRMSE = c(baseline.trainRMSE,
+                                   lmfull.trainRMSE,
+                                   lmfullinteraction.trainRMSE,
+                                   ridgesfull.trainRMSE,
+                                   ridgesfullinteraction.trainRMSE,
+                                   lassosfull.trainRMSE,
+                                   lassosfullinteraction.trainRMSE,
+                                   lmstep.trainRMSE),
+                     testRMSE = c(baseline.testRMSE,
+                                   lmfull.testRMSE,
+                                   lmfullinteraction.testRMSE,
+                                   ridgesfull.testRMSE,
+                                   ridgesfullinteraction.testRMSE,
+                                   lassosfull.testRMSE,
+                                   lassosfullinteraction.testRMSE,
+                                   lmstep.testRMSE))
+rownames(RMSE.df) <- c("baseline", "full", "full interaction",
+                       "ridge full", "ridge full interaction",
+                       "lasso full", "lasso full interaction",
+                       "step")
+RMSE.df
 ```
 
 ## Decision Tree/Random Forest
@@ -280,16 +421,63 @@ RMSE.tree2.train = RMSE(train.df$W.L..next_year,yhat.tree2.train)
 RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
+```{r}
+tree3 = rpart(W.L..next_year~W.L..same_year + ERAplus + WHIP,
+              data=train.df, control = list(minsplit=1, cp=0, maxdepth=20))
+yhat.tree3.train = predict(tree3)
+yhat.tree3.test = predict(tree3, newdata = test.df)
+RMSE.tree3.train = RMSE(train.df$W.L..next_year,yhat.tree3.train)
+RMSE.tree3.test = RMSE(test.df$W.L..next_year,yhat.tree3.test)
+data.frame(train=RMSE.tree3.train,test=RMSE.tree3.test)
+```
+```{r}
+best.cp = tree3$cptable[,"CP"][which.min(tree3$cptable[,"xerror"])]
+tree4 = prune(tree3,best.cp)
+yhat.tree4.train = predict(tree4)
+yhat.tree4.test = predict(tree4,newdata=test.df)
+RMSE.tree4.train = RMSE(train.df$W.L..next_year,yhat.tree4.train)
+RMSE.tree4.test = RMSE(test.df$W.L..next_year,yhat.tree4.test)
+data.frame(train=RMSE.tree4.train,test=RMSE.tree4.test)
+```
 
 ```{r}
 library(randomForest)
 set.seed(139)
 maxnodes = c(100,200,500)
-mtry = c(15, 30, 45, 60)
+ntree= 200
+rmses.bag = rep(NA,length(maxnodes))
+bestRMSE = sd(train.df$W.L..next_year)
+
+for(i in 1:length(maxnodes)){
+  bagtemp = randomForest(W.L..next_year ~ .,data=train.df,
+                        mtry=73, maxnodes=maxnodes[i], ntree=ntree)
+  rmses.bag[i]=RMSE(train.df$W.L..next_year, bagtemp$predicted)
+  if(rmses.bag[i]<bestRMSE){
+    best_maxnodes = maxnodes[i]
+    bestRMSE=rmses.bag[i]
+    bag=bagtemp
+  }
+}
+data.frame(maxnodes=maxnodes, RMSE=rmses.bag)
+
+yhat.bag.train = predict(bag)
+yhat.bag.test = predict(bag, newdata = test.df)
+RMSE.bag.train = RMSE(train.df$W.L..next_year,yhat.bag.train)
+RMSE.bag.test = RMSE(test.df$W.L..next_year,yhat.bag.test)
+data.frame(train=RMSE.bag.train,test=RMSE.bag.test)
+```
+
+
+
+```{r}
+library(randomForest)
+set.seed(139)
+maxnodes = c(100,200,500)
+mtry = c(10, 30, 50, 70)
 ntree=200
 pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
 RMSEs = rep(NA,nrow(pars))
-bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
+bestRMSE = sd(train.df$W.L..next_year)
 
 for(i in 1:nrow(pars)){
   rftemp = randomForest(W.L..next_year ~ .,data=train.df,
@@ -312,7 +500,134 @@ data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 ```
 
 ```{r}
-barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6)
+library(randomForest)
+set.seed(139)
+maxnodes = c(100,200,500)
+mtry = c(1,2,3)
+ntree=200
+pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
+RMSEs = rep(NA,nrow(pars))
+bestRMSE = sd(train.df$W.L..next_year)
+
+for(i in 1:nrow(pars)){
+  rftemp = randomForest(W.L..next_year ~ W.L..same_year + ERAplus + WHIP, data=train.df,
+                        mtry=pars$mtry[i], maxnodes=pars$maxnodes[i], ntree=ntree)
+  RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
+  if(RMSEs[i]<bestRMSE){
+    best_maxnodes = maxnodes[i]
+    bestRMSE=RMSEs[i]
+    rf2=rftemp
+  }
+}
+data.frame(maxnodes=pars$maxnodes,mtry=pars$mtry,RMSE=RMSEs)
+pars[which(RMSEs==bestRMSE),]
+
+yhat.rf2.train = predict(rf2)
+yhat.rf2.test = predict(rf2, newdata = test.df)
+RMSE.rf2.train = RMSE(train.df$W.L..next_year,yhat.rf2.train)
+RMSE.rf2.test = RMSE(test.df$W.L..next_year,yhat.rf2.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.rf2.test)
+```
+
+```{r}
+set.seed(139)
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(50,250,1)
+plot(W.L..next_year~ERAplus, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$ERAplus=dummyx
+  yhat = predict(tree4,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf2,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+```{r}
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(1,2,.01)
+plot(W.L..next_year~WHIP, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$WHIP=dummyx
+  yhat = predict(tree4,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf2,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+set.seed(139)
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(50,250,1)
+plot(W.L..next_year~ERAplus, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$ERAplus=dummyx
+  yhat = predict(bag,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf1,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(1,2,.01)
+plot(W.L..next_year~WHIP, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$WHIP=dummyx
+  yhat = predict(bag,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf1,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for Pruned Decision Tree with all predictors')
+varImpPlot(bag, cex=0.5)
 varImpPlot(rf1,cex=0.5)
+
+barplot(sort(tree4$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for Pruned Decision Tree with 3 predictors')
+varImpPlot(rf2, cex=0.5)
 ```
 
