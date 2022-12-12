@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ## EDA
 ```{r}
 library(dplyr)
-library(plyr)
 # Load team data
 team_data = list()
 team_wins <- list()
@@ -84,7 +83,7 @@ combined$Tm <- factor(combined$Tm)
 # team_data[[2022]] <- team2022
 
 team_wins <- list()
-for (year in 2018:2022) {
+for (year in years) {
   team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),c("Tm", "W.L.")]
 }
 ```
@@ -109,7 +108,7 @@ for (year in years) {
     quant_cols <- names(select_if(player_data[[year]][[bp]], is.numeric))
     agg_data[[year]][[bp]] <- player_data[[year]][[bp]][, c("Tm", quant_cols)] %>% 
       group_by(Tm) %>%
-      summarise_all("mean")
+      summarise(across(quant_cols, ~weighted.mean(., w = G)))
     agg_data[[year]][[bp]] <- agg_data[[year]][[bp]][!(agg_data[[year]][[bp]]$Tm == "TOT"),]
     agg_data[[year]][[bp]]$long_Tm <- factor(
       agg_data[[year]][[bp]]$Tm,
@@ -129,17 +128,20 @@ player_with_wins <- list()
 for (year in 1997:2021) {
   player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.x", by.y="Tm")
 }
+player_with_wins_combined = bind_rows(player_with_wins, )
+n.rows = nrow(player_with_wins_combined)
+n.train = 0.8 * n.rows
+train.rows = sample(n.rows, n.train)
+train.df = player_with_wins_combined[train.rows,]
+train.df = player_with_wins_combined[~train.rows,]
 ```
+
+
 
 
 ```{r}
 # Explore Potential Predictors
 par(mfrow=c(3,3))
-player_with_wins_combined = bind_rows(player_with_wins, )
-player_with_wins_combined = rbind(player_with_wins[[2018]],
-                                  player_with_wins[[2019]],
-                                  player_with_wins[[2020]],
-                                  player_with_wins[[2021]])
 plot(W.L..y ~ Age.x, data=player_with_wins_combined,
      xlab="Batters' Average Age", ylab="Winning Percentage")
 plot(W.L..y ~ Age.y, data=player_with_wins_combined,
