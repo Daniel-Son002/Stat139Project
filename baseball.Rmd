@@ -103,7 +103,9 @@ n.rows = nrow(player_with_wins_combined)
 n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
 train.df = player_with_wins_combined[train.rows,]
+colnames(train.df)[colnames(train.df) == 'OPS.'] <- 'OPSplus'
 test.df = player_with_wins_combined[-train.rows,]
+colnames(test.df)[colnames(test.df) == 'OPS.'] <- 'OPSplus'
 ```
 
 ```{r}
@@ -163,4 +165,6 @@ summary(baseline)
 # Asssess Linear Model Assumptions
 plot(baseline, which=c(1,2))
 ```
+
+
 
