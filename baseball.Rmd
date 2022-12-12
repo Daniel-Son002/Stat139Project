@@ -192,6 +192,16 @@ summary(baseline)
 plot(baseline, which=c(1,2))
 ```
 
+
+```{r}
+RMSE = function(y,yhat){
+  SSE = sum((y-yhat)^2)
+  return(sqrt(SSE/length(y)))  
+}
+RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+```
+
 ## Linear Regression
 
 ```{r}
@@ -199,6 +209,8 @@ colnames(train.df)
 ```
 
 ```{r}
+# full linear regression models
+
 # ignore Rk.bat, R.bat, RBI, year.bat, Rk.pitch, W, L, R.pitch
 # year.pitch, WL..next_year
 lm.full <- lm(W.L..next_year ~ Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
@@ -207,6 +219,21 @@ lm.full <- lm(W.L..next_year ~ Age.bat + G.bat + PA + AB + H.bat + X2B + X3B +
                 ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
                 HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
                 BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W, data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+
+lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
+                HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
+                TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
+                ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
+                HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
+                BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W)^2, data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+```
+
+```{r}
+summary(lm.full)
 ```
 
 ## Decision Tree/Random Forest
