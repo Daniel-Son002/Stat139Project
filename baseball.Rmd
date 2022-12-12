@@ -280,16 +280,63 @@ RMSE.tree2.train = RMSE(train.df$W.L..next_year,yhat.tree2.train)
 RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
+```{r}
+tree3 = rpart(W.L..next_year~W.L..same_year + ERAplus + WHIP,
+              data=train.df, control = list(minsplit=1, cp=0, maxdepth=20))
+yhat.tree3.train = predict(tree3)
+yhat.tree3.test = predict(tree3, newdata = test.df)
+RMSE.tree3.train = RMSE(train.df$W.L..next_year,yhat.tree3.train)
+RMSE.tree3.test = RMSE(test.df$W.L..next_year,yhat.tree3.test)
+data.frame(train=RMSE.tree3.train,test=RMSE.tree3.test)
+```
+```{r}
+best.cp = tree3$cptable[,"CP"][which.min(tree3$cptable[,"xerror"])]
+tree4 = prune(tree3,best.cp)
+yhat.tree4.train = predict(tree4)
+yhat.tree4.test = predict(tree4,newdata=test.df)
+RMSE.tree4.train = RMSE(train.df$W.L..next_year,yhat.tree4.train)
+RMSE.tree4.test = RMSE(test.df$W.L..next_year,yhat.tree4.test)
+data.frame(train=RMSE.tree4.train,test=RMSE.tree4.test)
+```
 
 ```{r}
 library(randomForest)
 set.seed(139)
 maxnodes = c(100,200,500)
-mtry = c(15, 30, 45, 60)
+ntree= 200
+rmses.bag = rep(NA,length(maxnodes))
+bestRMSE = sd(train.df$W.L..next_year)
+
+for(i in 1:length(maxnodes)){
+  bagtemp = randomForest(W.L..next_year ~ .,data=train.df,
+                        mtry=73, maxnodes=maxnodes[i], ntree=ntree)
+  rmses.bag[i]=RMSE(train.df$W.L..next_year, bagtemp$predicted)
+  if(rmses.bag[i]<bestRMSE){
+    best_maxnodes = maxnodes[i]
+    bestRMSE=rmses.bag[i]
+    bag=bagtemp
+  }
+}
+data.frame(maxnodes=maxnodes, RMSE=rmses.bag)
+
+yhat.bag.train = predict(bag)
+yhat.bag.test = predict(bag, newdata = test.df)
+RMSE.bag.train = RMSE(train.df$W.L..next_year,yhat.bag.train)
+RMSE.bag.test = RMSE(test.df$W.L..next_year,yhat.bag.test)
+data.frame(train=RMSE.bag.train,test=RMSE.bag.test)
+```
+
+
+
+```{r}
+library(randomForest)
+set.seed(139)
+maxnodes = c(100,200,500)
+mtry = c(10, 30, 50, 70)
 ntree=200
 pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
 RMSEs = rep(NA,nrow(pars))
-bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
+bestRMSE = sd(train.df$W.L..next_year)
 
 for(i in 1:nrow(pars)){
   rftemp = randomForest(W.L..next_year ~ .,data=train.df,
@@ -312,7 +359,134 @@ data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 ```
 
 ```{r}
-barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6)
+library(randomForest)
+set.seed(139)
+maxnodes = c(100,200,500)
+mtry = c(1,2,3)
+ntree=200
+pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
+RMSEs = rep(NA,nrow(pars))
+bestRMSE = sd(train.df$W.L..next_year)
+
+for(i in 1:nrow(pars)){
+  rftemp = randomForest(W.L..next_year ~ W.L..same_year + ERAplus + WHIP, data=train.df,
+                        mtry=pars$mtry[i], maxnodes=pars$maxnodes[i], ntree=ntree)
+  RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
+  if(RMSEs[i]<bestRMSE){
+    best_maxnodes = maxnodes[i]
+    bestRMSE=RMSEs[i]
+    rf2=rftemp
+  }
+}
+data.frame(maxnodes=pars$maxnodes,mtry=pars$mtry,RMSE=RMSEs)
+pars[which(RMSEs==bestRMSE),]
+
+yhat.rf2.train = predict(rf2)
+yhat.rf2.test = predict(rf2, newdata = test.df)
+RMSE.rf2.train = RMSE(train.df$W.L..next_year,yhat.rf2.train)
+RMSE.rf2.test = RMSE(test.df$W.L..next_year,yhat.rf2.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.rf2.test)
+```
+
+```{r}
+set.seed(139)
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(50,250,1)
+plot(W.L..next_year~ERAplus, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$ERAplus=dummyx
+  yhat = predict(tree4,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf2,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+```{r}
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(1,2,.01)
+plot(W.L..next_year~WHIP, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$WHIP=dummyx
+  yhat = predict(tree4,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf2,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+set.seed(139)
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(50,250,1)
+plot(W.L..next_year~ERAplus, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$ERAplus=dummyx
+  yhat = predict(bag,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf1,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+samp = sample(nrow(train.df),100)
+dummy_df = train.df[samp,]
+dummyx = seq(1,2,.01)
+plot(W.L..next_year~WHIP, data=train.df,cex=0.8,pch=16,col=rgb(0.5,0.5,0.5,0.3))
+yhats = matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+yhats.rf=matrix(NA,nrow=nrow(dummy_df),ncol=length(dummyx))
+for(i in 1:nrow(dummy_df)){
+  rows=dummy_df[rep(i,length(dummyx)),]
+  rows$WHIP=dummyx
+  yhat = predict(bag,new=rows)
+  lines(yhat~dummyx,col=rgb(0.5,0,0,0.5),lwd=0.5,lty=2:3)
+  yhats[i,]=yhat
+  yhat.rf = predict(rf1,new=rows)
+  lines(yhat.rf~dummyx,col=rgb(0,0.5,0,0.5),lwd=0.5,lty=2:3)
+  yhats.rf[i,]=yhat.rf
+}
+mean_yhat = apply(yhats,2,mean)
+mean_yhat.rf = apply(yhats.rf,2,mean)
+lines(mean_yhat~dummyx,col=rgb(0.5,0,0,1),lwd=3)
+lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
+```
+
+```{r}
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for Pruned Decision Tree with all predictors')
+varImpPlot(bag, cex=0.5)
 varImpPlot(rf1,cex=0.5)
+
+barplot(sort(tree4$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for Pruned Decision Tree with 3 predictors')
+varImpPlot(rf2, cex=0.5)
 ```
 
