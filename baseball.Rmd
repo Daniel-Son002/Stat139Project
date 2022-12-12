@@ -125,7 +125,7 @@ player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
 
 drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm",
-              "Age", "GS", "CG", "GS.field", "CG.field")
+              "Age", "GS", "CG", "GS.field", "CG.field", "Rdrs", "Rdrs.yr", "Rgood")
 player_with_wins_combined = player_with_wins_combined[, !(names(player_with_wins_combined) %in% drop_cols)]
 
 n.rows = nrow(player_with_wins_combined)
