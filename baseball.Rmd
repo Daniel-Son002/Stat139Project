@@ -124,7 +124,8 @@ player_with_wins_combined = bind_rows(player_with_wins_fa, )
 player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
 
-drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm")
+drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm",
+              "Age", "GS", "CG", "GS.field", "CG.field", "Rdrs", "Rdrs.yr", "Rgood")
 player_with_wins_combined = player_with_wins_combined[, !(names(player_with_wins_combined) %in% drop_cols)]
 
 n.rows = nrow(player_with_wins_combined)
@@ -146,7 +147,7 @@ names(train.df)
 
 ```{r}
 # Explore Potential Predictors
-par(mfrow=c(3,3))
+par(mfrow=c(3,4))
 plot(W.L..next_year ~ Age.bat, data=train.df,
      xlab="Batters' Average Age", ylab="Winning Percentage")
 plot(W.L..next_year ~ Age.pitch, data=train.df,
@@ -165,6 +166,12 @@ plot(W.L..next_year ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
 plot(W.L..next_year ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
+plot(W.L..next_year ~ tot_fa_war3, data=train.df,
+     xlab="Total Free Agent WAR3", ylab="Winning Percentage")
+plot(W.L..next_year ~ E, data=train.df,
+     xlab="Errors", ylab="Winning Percentage")
+plot(W.L..next_year ~ Fld., data=train.df,
+     xlab="Fielding%", ylab="Winning Percentage")
 ```
 
 ```{r}
@@ -183,15 +190,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERAplus + SO.W + HR9 + WHIP, data = train.df)
+                 OPS + ERAplus + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
 summary(baseline)
 ```
 
@@ -220,23 +227,29 @@ colnames(train.df)
 ```{r}
 # full linear regression models
 
-# ignore Rk.bat, R.bat, RBI, year.bat, Rk.pitch, W, L, R.pitch
-# year.pitch, WL..next_year
-lm.full <- lm(W.L..next_year ~ Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
+# ignore Rk.bat, R.bat, RBI, year.bat, year_adj.bat, W, L, R.pitch, year.pitch
+# year_adj.pitch, Rk, Age, WL..next_year, year, year_adj, 
+# Rtot, Rtot.yr, Rdrs, Rgood (hard to interpret)
+lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
-                HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
-                BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W, data = train.df)
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas,
+              data = train.df)
 RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
 RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
 
-lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
+lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
-                HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
-                BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W)^2, data = train.df)
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
 RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
 RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
 ```
@@ -251,7 +264,7 @@ set.seed(139)
 library(rpart)
 
 RMSE = function(y,yhat){
-return(sqrt(mean((y-yhat)^2)))
+  return(sqrt(mean((y-yhat)^2)))
 }
 
 test.df = subset(test.df, test.df$Tm != 'CLE')
@@ -284,8 +297,8 @@ RMSEs = rep(NA,nrow(pars))
 bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
 
 for(i in 1:nrow(pars)){
-  rftemp = randomForest(W.L..next_year ~.,data=train.df,
-                        mtry=pars$mtry[i],maxnodes=pars$maxnodes[i],ntree=ntree)
+  rftemp = randomForest(W.L..next_year ~ .,data=train.df,
+                        mtry=pars$mtry[i], maxnodes=pars$maxnodes[i], ntree=ntree)
   RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
   if(RMSEs[i]<bestRMSE){
     best_maxnodes = maxnodes[i]
