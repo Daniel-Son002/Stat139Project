@@ -124,7 +124,8 @@ player_with_wins_combined = bind_rows(player_with_wins_fa, )
 player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
 
-drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm")
+drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm",
+              "Age", "GS", "CG", "GS.field", "CG.field")
 player_with_wins_combined = player_with_wins_combined[, !(names(player_with_wins_combined) %in% drop_cols)]
 
 n.rows = nrow(player_with_wins_combined)
@@ -202,6 +203,16 @@ summary(baseline)
 plot(baseline, which=c(1,2))
 ```
 
+
+```{r}
+RMSE = function(y,yhat){
+  SSE = sum((y-yhat)^2)
+  return(sqrt(SSE/length(y)))  
+}
+RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+```
+
 ## Linear Regression
 
 ```{r}
@@ -209,14 +220,37 @@ colnames(train.df)
 ```
 
 ```{r}
-# ignore Rk.bat, R.bat, RBI, year.bat, Rk.pitch, W, L, R.pitch
-# year.pitch, WL..next_year
-lm.full <- lm(W.L..next_year ~ Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
+# full linear regression models
+
+# ignore Rk.bat, R.bat, RBI, year.bat, year_adj.bat, W, L, R.pitch, year.pitch
+# year_adj.pitch, Rk, Age, WL..next_year, year, year_adj, 
+# Rtot, Rtot.yr, Rdrs, Rgood (hard to interpret)
+lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
-                HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
-                BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W, data = train.df)
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas,
+              data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+
+lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B + 
+                HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
+                TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+```
+
+```{r}
+summary(lm.full)
 ```
 
 ## Decision Tree/Random Forest
@@ -242,7 +276,7 @@ best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
 tree2 = prune(tree1,best.cp)
 yhat.tree2.train = predict(tree2)
 yhat.tree2.test = predict(tree2,newdata=test.df)
-RMSE.tree2.train = RMSE(train.df$W.L..next_yea,yhat.tree2.train)
+RMSE.tree2.train = RMSE(train.df$W.L..next_year,yhat.tree2.train)
 RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
@@ -250,8 +284,8 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r}
 library(randomForest)
 set.seed(139)
-maxnodes = c(50,200,500)
-mtry = c(10, 20, 40, 50, 60)
+maxnodes = c(100,200,500)
+mtry = c(15, 30, 45, 60)
 ntree=200
 pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
 RMSEs = rep(NA,nrow(pars))
@@ -275,5 +309,10 @@ yhat.rf1.test = predict(rf1, newdata = test.df)
 RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
 RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
+```
+
+```{r}
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6)
+varImpPlot(rf1,cex=0.5)
 ```
 
