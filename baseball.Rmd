@@ -159,6 +159,7 @@ hist(player_with_wins_combined$W.L..y, main="Distribution of Winning Percentage"
 ```{r}
 # Correlation matrix
 cor(player_with_wins_combined[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
+cor(player_with_wins_combined[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
 ```
 
 
