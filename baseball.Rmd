@@ -327,6 +327,16 @@ for (i in 1997:2022){
 lmer_model <- lmer(train.df$W.L..next_year ~ poly(train.df$Age.bat, 2, raw = FALSE) + (1 + poly(train.df$Age.bat, 2, raw = FALSE) || train.df$Tm))
 summary(lmer_model)
 
-lmer_model <- lmer(train.df$W.L..next_year ~ poly(train.df$Age.bat, 2, raw = FALSE) + (1 + poly(train.df$Age.bat, 2, raw = FALSE) || train.df$Tm))
+lmer_model <- lmer(train.df$W.L..next_year ~ poly(train.df$BA, 2, raw = FALSE) + (1 + poly(train.df$BA, 2, raw = FALSE) || train.df$Tm))
+summary(lmer_model)
+
+lmer_model <- lmer(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
+                HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
+                TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year +
+                GF + SHO + SV + IP + H.pitch + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df)
 ```
 
