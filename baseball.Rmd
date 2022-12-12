@@ -240,19 +240,30 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r}
 library(randomForest)
 set.seed(139)
-maxnodes1 = maxnodes = c(10,20,50,100)
+maxnodes = c(50,200,500)
+mtry = c(10, 20, 40, 50, 60)
 ntree=200
-rmses.rf1 = rep(NA,length(maxnodes))
-bestRMSE = sd(train.df$W.L..next_year)
-for(i in 1:length(maxnodes)){
-  rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
-  rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
-  if(rmses.rf1[i]<bestRMSE){
+pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
+RMSEs = rep(NA,nrow(pars))
+bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
+
+for(i in 1:nrow(pars)){
+  rftemp = randomForest(W.L..next_year ~.,data=train.df,
+                        mtry=pars$mtry[i],maxnodes=pars$maxnodes[i],ntree=ntree)
+  RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
+  if(RMSEs[i]<bestRMSE){
     best_maxnodes = maxnodes[i]
-    bestRMSE=rmses.rf1[i]
+    bestRMSE=RMSEs[i]
     rf1=rftemp
   }
 }
+data.frame(maxnodes=pars$maxnodes,mtry=pars$mtry,RMSE=RMSEs)
+pars[which(RMSEs==bestRMSE),]
 
-data.frame(maxnodes=maxnodes,RMSE=rmses.rf1)
+yhat.rf1.train = predict(rf1)
+yhat.rf1.test = predict(rf1, newdata = test.df)
+RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
+RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 ```
+
