@@ -19,7 +19,8 @@ drop = c("W", "L")
 for (year in 1997:2022) {
   df1 = read.csv(paste("data/teams_data/batting", year, ".csv", sep=""))
   df2 = read.csv(paste("data/teams_data/pitching", year, ".csv", sep=""))
-  df_tot = merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch"))
+  df3 = read.csv(paste("data/teams_data/fielding", year, ".csv", sep=""))
+  df_tot = merge(merge(df1, df2, by="Tm", suffixes=c(".bat", ".pitch")), df3, by="Tm", suffixes=c("", ".field"))
   
   df_tot = df_tot[
     !(df_tot$Tm %in% c("", "League Average")),
@@ -32,7 +33,7 @@ for (year in 1997:2022) {
 
 # Load player data
 years <- 1997:2022
-bps <- c("batting", "pitching")
+bps <- c("batting", "pitching", "fielding")
 player_data <- list()
 for (year in years) {
   player_data[[year]] <- list()
@@ -46,13 +47,19 @@ for (year in years) {
     }
   }
 }
+
+fa_data = list()
+for (year in years) {
+  fa_data[[year]] = read.csv(paste("data/fa_data/fa", year, ".csv", sep=""))
+  fa_data[[year]]$WAR3[is.na(fa_data[[year]]$WAR3)] = 0
+}
 ```
 
 ```{r}
 # Data Cleaning for the Team Data
 team_wins <- list()
 for (year in years) {
-  team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),c("Tm", "W.L.")]
+  team_wins[[year]] <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")), c("Tm", "W.L.")]
 }
 ```
 
@@ -62,6 +69,7 @@ for (year in years) {
 for (year in years) {
   for (bp in bps) {
     player_data[[year]][[bp]]$year <- year
+    player_data[[year]][[bp]]$year_adj <- year - 1997
   }
 }
 
@@ -92,7 +100,12 @@ for (year in years) {
 
 player_combo <- list()
 for (year in years) {
-  player_combo[[year]] <- merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm", suffixes=c(".bat", ".pitch"))
+  player_combo[[year]] <- merge(merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm", suffixes=c(".bat", ".pitch")), agg_data[[year]][[bps[3]]], by="Tm", suffixes=c("", ".field"))
+}
+
+agg_fa_data <- list()
+for (year in years) {
+  agg_fa_data[[year]] = fa_data[[year]] %>% group_by(To.Team) %>% summarise(tot_fa_war3=sum(WAR3), num_fas=n())
 }
 
 # add response variable to player data
@@ -100,9 +113,21 @@ player_with_wins <- list()
 for (year in 1997:2021) {
   player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.pitch", by.y="Tm", suffixes=c(".same_year", ".next_year"))
 }
-player_with_wins_combined = bind_rows(player_with_wins, )
+
+player_with_wins_fa <- list()
+for (year in 1997:2021) {
+  player_with_wins_fa[[year]] <- merge(player_with_wins[[year]], agg_fa_data[[year]], by.x="long_Tm.pitch", by.y="To.Team")
+}
+
+
+player_with_wins_combined = bind_rows(player_with_wins_fa, )
 player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
 player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
+
+drop_cols = c("long_Tm.pitch", "Rk.bat", "G.bat", "long_Tm.bat", "Rk.pitch", "W", "L", "G.pitch", "long_Tm",
+              "Age", "GS", "CG", "GS.field", "CG.field", "Rdrs", "Rdrs.yr", "Rgood")
+player_with_wins_combined = player_with_wins_combined[, !(names(player_with_wins_combined) %in% drop_cols)]
+
 n.rows = nrow(player_with_wins_combined)
 n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
@@ -122,7 +147,7 @@ names(train.df)
 
 ```{r}
 # Explore Potential Predictors
-par(mfrow=c(3,3))
+par(mfrow=c(3,4))
 plot(W.L..next_year ~ Age.bat, data=train.df,
      xlab="Batters' Average Age", ylab="Winning Percentage")
 plot(W.L..next_year ~ Age.pitch, data=train.df,
@@ -141,6 +166,12 @@ plot(W.L..next_year ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
 plot(W.L..next_year ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
+plot(W.L..next_year ~ tot_fa_war3, data=train.df,
+     xlab="Total Free Agent WAR3", ylab="Winning Percentage")
+plot(W.L..next_year ~ E, data=train.df,
+     xlab="Errors", ylab="Winning Percentage")
+plot(W.L..next_year ~ Fld., data=train.df,
+     xlab="Fielding%", ylab="Winning Percentage")
 ```
 
 ```{r}
@@ -154,15 +185,15 @@ hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])
-cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERAplus", "SO.W", "HR9", "WHIP", "tot_fa_war3", "E", "Fld.")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
 baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
-                 OPS + ERAplus + SO.W + HR9 + WHIP, data = train.df)
+                 OPS + ERAplus + SO.W + HR9 + WHIP + tot_fa_war3 + E + Fld. , data = train.df)
 summary(baseline)
 ```
 
@@ -172,6 +203,16 @@ summary(baseline)
 plot(baseline, which=c(1,2))
 ```
 
+
+```{r}
+RMSE = function(y,yhat){
+  SSE = sum((y-yhat)^2)
+  return(sqrt(SSE/length(y)))  
+}
+RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
+```
+
 ## Linear Regression
 
 ```{r}
@@ -179,14 +220,37 @@ colnames(train.df)
 ```
 
 ```{r}
-# ignore Rk.bat, R.bat, RBI, year.bat, Rk.pitch, W, L, R.pitch
-# year.pitch, WL..next_year
-lm.full <- lm(W.L..next_year ~ Age.bat + G.bat + PA + AB + H.bat + X2B + X3B + 
+# full linear regression models
+
+# ignore Rk.bat, R.bat, RBI, year.bat, year_adj.bat, W, L, R.pitch, year.pitch
+# year_adj.pitch, Rk, Age, WL..next_year, year, year_adj, 
+# Rtot, Rtot.yr, Rdrs, Rgood (hard to interpret)
+lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
                 HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
                 TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
-                ERA + G.pitch + GS + GF + CG + SHO + SV + IP + H.pitch + ER + 
-                HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + 
-                BF + ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W, data = train.df)
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas,
+              data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
+
+lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B + 
+                HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
+                TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + 
+                ERA + GF + SHO + SV + IP + H.pitch + ER + HR.pitch + 
+                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                ERAplus + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                G + Inn + Ch + PO + A + E + DP + Fld. + 
+                RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
+RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
+RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
+```
+
+```{r}
+summary(lm.full)
 ```
 
 ## Decision Tree/Random Forest
@@ -195,7 +259,7 @@ set.seed(139)
 library(rpart)
 
 RMSE = function(y,yhat){
-return(sqrt(mean((y-yhat)^2)))
+  return(sqrt(mean((y-yhat)^2)))
 }
 
 test.df = subset(test.df, test.df$Tm != 'CLE')
@@ -212,7 +276,7 @@ best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
 tree2 = prune(tree1,best.cp)
 yhat.tree2.train = predict(tree2)
 yhat.tree2.test = predict(tree2,newdata=test.df)
-RMSE.tree2.train = RMSE(train.df$W.L..next_yea,yhat.tree2.train)
+RMSE.tree2.train = RMSE(train.df$W.L..next_year,yhat.tree2.train)
 RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
@@ -220,19 +284,35 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r}
 library(randomForest)
 set.seed(139)
-maxnodes1 = maxnodes = c(10,20,50,100)
+maxnodes = c(100,200,500)
+mtry = c(15, 30, 45, 60)
 ntree=200
-rmses.rf1 = rep(NA,length(maxnodes))
-bestRMSE = sd(train.df$W.L..next_year)
-for(i in 1:length(maxnodes)){
-  rftemp = randomForest(W.L..next_year~., data=train.df, mtry=1, maxnodes=maxnodes[i], ntree=ntree)
-  rmses.rf1[i] = RMSE(train.df$W.L..next_year,rftemp$predicted)
-  if(rmses.rf1[i]<bestRMSE){
+pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
+RMSEs = rep(NA,nrow(pars))
+bestRMSE = sd(train.df$W.L..next_year) # if we can't beat this, we are in trouble
+
+for(i in 1:nrow(pars)){
+  rftemp = randomForest(W.L..next_year ~ .,data=train.df,
+                        mtry=pars$mtry[i], maxnodes=pars$maxnodes[i], ntree=ntree)
+  RMSEs[i]=RMSE(train.df$W.L..next_year, rftemp$predicted)
+  if(RMSEs[i]<bestRMSE){
     best_maxnodes = maxnodes[i]
-    bestRMSE=rmses.rf1[i]
+    bestRMSE=RMSEs[i]
     rf1=rftemp
   }
 }
+data.frame(maxnodes=pars$maxnodes,mtry=pars$mtry,RMSE=RMSEs)
+pars[which(RMSEs==bestRMSE),]
 
-data.frame(maxnodes=maxnodes,RMSE=rmses.rf1)
+yhat.rf1.train = predict(rf1)
+yhat.rf1.test = predict(rf1, newdata = test.df)
+RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
+RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
+data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 ```
+
+```{r}
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6)
+varImpPlot(rf1,cex=0.5)
+```
+
