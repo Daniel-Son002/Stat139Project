@@ -653,6 +653,51 @@ lmer_model <- lmer(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B +
                 BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
                 FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
-                RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df)
+                RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df, verbose=TRUE)
+```
+
+```{r}
+summary(lmer_model)
+```
+
+```{r}
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + (1 + WHIP + W.L..same_year + Age.pitch | Tm), data = train.df)
+# summary(lmer.varmodel)
+# predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+
+```{r}
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch | Tm, data = train.df)
+# summary(lmer.varmodel)
+# predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + tot_fa_war3 | Tm, data = train.df)
+# summary(lmer.varmodel)
+# predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 | Tm, data = train.df)
+# summary(lmer.varmodel)
+# predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 + (1 + W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 | Tm), data = train.df)
+# summary(lmer.varmodel)
+# predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
