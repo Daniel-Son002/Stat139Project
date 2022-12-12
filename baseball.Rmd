@@ -149,27 +149,27 @@ names(train.df)
 # Explore Potential Predictors
 par(mfrow=c(3,4))
 plot(W.L..next_year ~ Age.bat, data=train.df,
-     xlab="Batters' Average Age", ylab="Winning Percentage")
+     xlab="Batters' Avg. Age", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ Age.pitch, data=train.df,
-     xlab="Pitchers' Average Age", ylab="Winning Percentage")
+     xlab="Pitchers' Avg. Age", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ BA, data=train.df,
-     xlab="Batting Average", ylab="Winning Percentage")
+     xlab="Batting Avg.", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ HR.bat, data=train.df,
-     xlab="Average Home Runs", ylab="Winning Percentage")
+     xlab="Avg. Home Runs", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ OPSplus, data=train.df,
-     xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
+     xlab="Adjusted OPS", ylab="Winning Percentage", cex=0.3)
 plot(W.L..next_year ~ SO.W, data=train.df,
-     xlab="Average Strikeout/Walk", ylab="Winning Percentage")
+     xlab="Avg. Strikeout/Walk", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ HR9, data=train.df,
-     xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
+     xlab="Avg. HR/9", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ WHIP, data=train.df,
-     xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
+     xlab="WHIP", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ tot_fa_war3, data=train.df,
-     xlab="Total Free Agent WAR3", ylab="Winning Percentage")
+     xlab="Total Free Agent WAR3", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ E, data=train.df,
-     xlab="Errors", ylab="Winning Percentage")
+     xlab="Errors", ylab="Winning %", cex=0.3)
 plot(W.L..next_year ~ Fld., data=train.df,
-     xlab="Fielding%", ylab="Winning Percentage")
+     xlab="Fielding %", ylab="Winning %", cex=0.3)
 ```
 
 ```{r}
