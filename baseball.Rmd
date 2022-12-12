@@ -14,19 +14,25 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(plyr)
 # Load team data
-team.batting.2018 <- read.csv('data/team_data/2018batting.csv')
-team.pitching.2018 <- read.csv('data/team_data/2018pitching.csv')
-team.batting.2019 <- read.csv('data/team_data/2019batting.csv')
-team.pitching.2019 <- read.csv('data/team_data/2019pitching.csv')
-team.batting.2020 <- read.csv('data/team_data/2020batting.csv')
-team.pitching.2020 <- read.csv('data/team_data/2020pitching.csv')
-team.batting.2021 <- read.csv('data/team_data/2021batting.csv')
-team.pitching.2021 <- read.csv('data/team_data/2021pitching.csv')
-team.batting.2022 <- read.csv('data/team_data/2022batting.csv')
-team.pitching.2022 <- read.csv('data/team_data/2022pitching.csv')
+team_data = list()
+team_wins <- list()
+drop = c("W", "L")
+for (year in 1997:2022) {
+  df1 = read.csv(paste("data/teams_data/batting", year, ".csv", sep=""))
+  df2 = read.csv(paste("data/teams_data/pitching", year, ".csv", sep=""))
+  df_tot = merge(df1, df2, by="Tm")
+  
+  df_tot = df_tot[
+    !(df_tot$Tm %in% c("", "League Average")),
+    !(names(df_tot) %in% drop)
+  ]
+  df_tot$Tm = factor(df_tot$Tm)
+  team_data[[year]] = df_tot
+  team_wins[[year]] = df_tot[, c("Tm", "W.L.")]
+}
 
 # Load player data
-years <- 2015:2022
+years <- 1997:2022
 bps <- c("batting", "pitching")
 player_data <- list()
 for (year in years) {
@@ -70,12 +76,12 @@ team.train$Tm <- factor(team.train$Tm)
 team.test$Tm <- factor(team.test$Tm)
 combined$Tm <- factor(combined$Tm)
 
-team_data <- list()
-team_data[[2018]] <- team2018
-team_data[[2019]] <- team2019
-team_data[[2020]] <- team2020
-team_data[[2021]] <- team2021
-team_data[[2022]] <- team2022
+# team_data <- list()
+# team_data[[2018]] <- team2018
+# team_data[[2019]] <- team2019
+# team_data[[2020]] <- team2020
+# team_data[[2021]] <- team2021
+# team_data[[2022]] <- team2022
 
 team_wins <- list()
 for (year in 2018:2022) {
@@ -91,6 +97,7 @@ for (year in years) {
     player_data[[year]][[bp]]$year <- year
   }
 }
+
 long_team_names <- team_data[[year]][!(team_data[[year]]$Tm %in% c("", "League Average")),]$Tm
 short_team_names <- c("ARI", "ATL", "BAL", "BOS", "CHC", "CHW", "CIN", "CLE", "COL", "DET",
                       "HOU", "KCR", "LAA", "LAD", "MIA", "MIL", "MIN", "NYM", "NYY", "OAK",
@@ -100,11 +107,15 @@ for (year in years) {
   agg_data[[year]] <- list()
   for (bp in bps) {
     quant_cols <- names(select_if(player_data[[year]][[bp]], is.numeric))
-    agg_data[[year]][[bp]] <- player_data[[year]][[bp]][, c("Tm", quant_cols)] %>% group_by(Tm) %>% summarise_all("mean")
-    agg_data[[year]][[bp]]$long_Tm <- mapvalues(agg_data[[year]][[bp]]$Tm,
-                                                from=short_team_names,
-                                                to=long_team_names)
+    agg_data[[year]][[bp]] <- player_data[[year]][[bp]][, c("Tm", quant_cols)] %>% 
+      group_by(Tm) %>%
+      summarise_all("mean")
     agg_data[[year]][[bp]] <- agg_data[[year]][[bp]][!(agg_data[[year]][[bp]]$Tm == "TOT"),]
+    agg_data[[year]][[bp]]$long_Tm <- factor(
+      agg_data[[year]][[bp]]$Tm,
+      levels=short_team_names,
+      labels=long_team_names
+    )
   }
 }
 
@@ -115,14 +126,16 @@ for (year in years) {
 
 # add response variable to player data
 player_with_wins <- list()
-for (year in 2018:2021) {
+for (year in 1997:2021) {
   player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.x", by.y="Tm")
 }
 ```
 
+
 ```{r}
 # Explore Potential Predictors
 par(mfrow=c(3,3))
+player_with_wins_combined = bind_rows(player_with_wins, )
 player_with_wins_combined = rbind(player_with_wins[[2018]],
                                   player_with_wins[[2019]],
                                   player_with_wins[[2020]],
