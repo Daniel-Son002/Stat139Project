@@ -175,11 +175,6 @@ plot(W.L..next_year ~ Fld., data=train.df,
 ```
 
 ```{r}
-plot(W.L..next_year ~ tot_fa_war3, data=train.df)
-plot(W.L..next_year ~ num_fas, data=train.df)
-```
-
-```{r}
 # Summary statistics for winpct
 summary(train.df$W.L..next_year)
 
