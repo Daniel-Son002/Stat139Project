@@ -232,7 +232,7 @@ best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
 tree2 = prune(tree1,best.cp)
 yhat.tree2.train = predict(tree2)
 yhat.tree2.test = predict(tree2,newdata=test.df)
-RMSE.tree2.train = RMSE(train.df$W.L..next_yea,yhat.tree2.train)
+RMSE.tree2.train = RMSE(train.df$W.L..next_year,yhat.tree2.train)
 RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
@@ -240,8 +240,8 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r}
 library(randomForest)
 set.seed(139)
-maxnodes = c(50,200,500)
-mtry = c(10, 20, 40, 50, 60)
+maxnodes = c(100,200,500)
+mtry = c(15, 30, 45, 60)
 ntree=200
 pars = expand.grid(maxnodes=maxnodes,mtry=mtry)
 RMSEs = rep(NA,nrow(pars))
@@ -265,5 +265,10 @@ yhat.rf1.test = predict(rf1, newdata = test.df)
 RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
 RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
+```
+
+```{r}
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.6)
+varImpPlot(rf1,cex=0.5)
 ```
 
