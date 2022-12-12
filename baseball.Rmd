@@ -107,7 +107,7 @@ colnames(train.df)[colnames(train.df) == 'OPS.'] <- 'OPSplus'
 colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
 test.df = player_with_wins_combined[-train.rows,]
 colnames(test.df)[colnames(test.df) == 'OPS.'] <- 'OPSplus'
-colnames(train.df)[colnames(train.df) == 'ERA.'] <- 'ERAplus'
+colnames(test.df)[colnames(test.df) == 'ERA.'] <- 'ERAplus'
 ```
 
 ```{r}
