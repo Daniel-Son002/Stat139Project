@@ -88,15 +88,17 @@ for (year in years) {
 
 player_combo <- list()
 for (year in years) {
-  player_combo[[year]] <- merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm")
+  player_combo[[year]] <- merge(agg_data[[year]][[bps[1]]], agg_data[[year]][[bps[2]]], by="Tm", suffixes=c(".bat", ".pitch"))
 }
 
 # add response variable to player data
 player_with_wins <- list()
 for (year in 1997:2021) {
-  player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.x", by.y="Tm")
+  player_with_wins[[year]] <- merge(player_combo[[year]], team_wins[[year+1]], by.x="long_Tm.pitch", by.y="Tm", suffixes=c(".same_year", ".next_year"))
 }
 player_with_wins_combined = bind_rows(player_with_wins, )
+player_with_wins_combined$W.L..same_year = 100 * player_with_wins_combined$W.L..same_year
+player_with_wins_combined$W.L..next_year = 100 * player_with_wins_combined$W.L..next_year
 n.rows = nrow(player_with_wins_combined)
 n.train = 0.8 * n.rows
 train.rows = sample(n.rows, n.train)
@@ -106,51 +108,52 @@ test.df = player_with_wins_combined[-train.rows,]
 
 ```{r}
 train.df
+names(train.df)
 ```
 
 
 ```{r}
 # Explore Potential Predictors
 par(mfrow=c(3,3))
-plot(W.L..pitch ~ Age.bat, data=train.df,
+plot(W.L..next_year ~ Age.bat, data=train.df,
      xlab="Batters' Average Age", ylab="Winning Percentage")
-plot(W.L..y ~ Age.y, data=train.df,
+plot(W.L..next_year ~ Age.pitch, data=train.df,
      xlab="Pitchers' Average Age", ylab="Winning Percentage")
-plot(W.L..y ~ BA, data=train.df,
+plot(W.L..next_year ~ BA, data=train.df,
      xlab="Batting Average", ylab="Winning Percentage")
-plot(W.L..y ~ HR.x, data=train.df,
+plot(W.L..next_year ~ HR.bat, data=train.df,
      xlab="Average Home Runs", ylab="Winning Percentage")
-plot(W.L..y ~ OPS., data=train.df,
+plot(W.L..next_year ~ OPS., data=train.df,
      xlab="Adjusted On Base Percentage Plus Slugging", ylab="Winning Percentage")
-plot(W.L..y ~ ERA., data=train.df,
+plot(W.L..next_year ~ ERA., data=train.df,
      xlab="Adjusted Earned Run Average", ylab="Winning Percentage")
-plot(W.L..y ~ SO.W, data=train.df,
+plot(W.L..next_year ~ SO.W, data=train.df,
      xlab="Average Strikeout/Walk", ylab="Winning Percentage")
-plot(W.L..y ~ HR9, data=train.df,
+plot(W.L..next_year ~ HR9, data=train.df,
      xlab="Average Home Runs per Nine Innings", ylab="Winning Percentage")
-plot(W.L..y ~ WHIP, data=train.df,
+plot(W.L..next_year ~ WHIP, data=train.df,
      xlab="Walks and Hits Per Inning Pitched", ylab="Winning Percentage")
 ```
 
 ```{r}
 # Summary statistics for winpct
-summary(train.df$W.L..y)
+summary(train.df$W.L..next_year)
 
 # Histogram for winpct
-hist(train.df$W.L..y, main="Distribution of Winning Percentage",
+hist(train.df$W.L..next_year, main="Distribution of Winning Percentage",
      xlab="Winning Percentage")
 ```
 
 ```{r}
 # Correlation matrix
-cor(train.df[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
-cor(train.df[, c("W.L..y", "Age.x", "Age.y", "BA", "HR.x", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])
+cor(train.df[, c("W.L..next_year", "Age.bat", "Age.pitch", "BA", "HR.bat", "OPS", "ERA.", "SO.W", "HR9", "WHIP")])^2
 ```
 
 
 ```{r}
 # Baseline Multiple Regression Model
-baseline <- lm(W.L..y ~ Age.x + Age.y + BA + HR.x + 
+baseline <- lm(W.L..next_year ~ Age.bat + Age.pitch + BA + HR.bat + 
                  OPS + ERA. + SO.W + HR9 + WHIP, data = train.df)
 summary(baseline)
 ```
