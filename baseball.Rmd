@@ -635,10 +635,10 @@ varImpPlot(rf2, cex=0.5)
 library(lme4)
 set.seed(139)
 
-for (i in 1997:2022){
-  lmer_model <- lmer(team_data[[i]]$W.L.~poly(team_data[[i]]$BatAge, 2, raw = TRUE) + (1 + poly(team_data[[i]]$BatAge, 2, raw = TRUE) || team_data[[i]]$Tm), weights = team_data[[i]]$G)
-  summary(lmer_model)
-}
+# for (i in 1997:2022){
+#   lmer_model <- lmer(team_data[[i]]$W.L.~poly(team_data[[i]]$BatAge, 2, raw = TRUE) + (1 + poly(team_data[[i]]$BatAge, 2, raw = TRUE) || team_data[[i]]$Tm), weights = team_data[[i]]$G)
+#   summary(lmer_model)
+# }
 
 lmer_model <- lmer(train.df$W.L..next_year ~ poly(train.df$Age.bat, 2, raw = FALSE) + (1 + poly(train.df$Age.bat, 2, raw = FALSE) || train.df$Tm))
 summary(lmer_model)
