@@ -140,7 +140,7 @@ colnames(test.df)[colnames(test.df) == 'ERA.'] <- 'ERAplus'
 ```
 
 ```{r}
-train.df
+# train.df
 names(train.df)
 ```
 
@@ -265,11 +265,13 @@ lmfullinteraction.testR2 = R2(test.df$W.L..next_year, predict(lm.fullinteraction
 # Ridge Regression
 set.seed(139)
 library(glmnet)
+library(caret)
 # regularize full model
 X.full = model.matrix(lm.full)[,-1] # drop intercept
 best_lambda = cv.glmnet(X.full, train.df$W.L..next_year, alpha=0, lambda=10^seq(-4, 4, 0.1))$lambda.min
 ridges.full = glmnet(X.full, train.df$W.L..next_year, alpha=0, 
                      lambda=best_lambda)
+varImp(ridges.full, lambda=best_lambda)
 X.full.test = model.matrix(lm.full, data=test.df)[,-1] # drop intercept
 
 yhats.full.train = predict(ridges.full, X.full)
@@ -311,6 +313,7 @@ best_lambda = cv.glmnet(X.full, train.df$W.L..next_year, alpha=1,
                         lambda=10^seq(-4, 4, 0.1))$lambda.min
 lassos.full = glmnet(X.full, train.df$W.L..next_year, alpha=1, 
                      lambda=best_lambda)
+varImp(lassos.full, lambda=best_lambda)
 yhats.full.train = predict(lassos.full, X.full)
 lassosfull.trainRMSE = RMSE(train.df$W.L..next_year, yhats.full.train) # train RMSE
 lassosfull.trainR2 = R2(train.df$W.L..next_year, yhats.full.train) # train R2
@@ -467,6 +470,7 @@ data.frame(train=RMSE.bag.train,test=RMSE.bag.test)
 
 ```{r}
 library(randomForest)
+library(varImp)
 set.seed(139)
 maxnodes = c(100,200,500)
 mtry = c(15, 25, 35, 45, 55)
@@ -493,6 +497,7 @@ yhat.rf1.test = predict(rf1, newdata = test.df)
 RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
 RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
+importance(rf1)
 ```
 
 ```{r}
@@ -523,6 +528,7 @@ yhat.rf2.test = predict(rf2, newdata = test.df)
 RMSE.rf2.train = RMSE(train.df$W.L..next_year,yhat.rf2.train)
 RMSE.rf2.test = RMSE(test.df$W.L..next_year,yhat.rf2.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf2.test)
+importance(rf2)
 ```
 
 ```{r}
@@ -642,14 +648,14 @@ summary(lmer_model)
 lmer_model <- lmer(train.df$W.L..next_year ~ poly(train.df$BA, 2, raw = FALSE) + (1 + poly(train.df$BA, 2, raw = FALSE) || train.df$Tm))
 summary(lmer_model)
 
-lmer_model <- lmer(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
-                HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
-                TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year +
-                GF + SHO + SV + IP + H.pitch + HR.pitch + 
-                BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
-                FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
-                G + Inn + Ch + PO + A + E + DP + Fld. + 
-                RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df, verbose=TRUE)
+# lmer_model <- lmer(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + 
+                # HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus +
+                # TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year +
+                # GF + SHO + SV + IP + H.pitch + HR.pitch + 
+                # BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF +
+                # FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
+                # G + Inn + Ch + PO + A + E + DP + Fld. + 
+                # RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df, verbose=TRUE)
 ```
 
 ```{r}
@@ -657,6 +663,7 @@ summary(lmer_model)
 ```
 
 ```{r}
+set.seed(139)
 lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + (1 + WHIP + W.L..same_year + Age.pitch | Tm), data = train.df)
 # summary(lmer.varmodel)
 # predict(lmer.varmodel)
@@ -666,6 +673,7 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 
 
 ```{r}
+set.seed(139)
 lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch | Tm, data = train.df)
 # summary(lmer.varmodel)
 # predict(lmer.varmodel)
@@ -674,6 +682,7 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 ```{r}
+set.seed(139)
 lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + tot_fa_war3 | Tm, data = train.df)
 # summary(lmer.varmodel)
 # predict(lmer.varmodel)
@@ -682,6 +691,7 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 ```{r}
+set.seed(139)
 lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 | Tm, data = train.df)
 # summary(lmer.varmodel)
 # predict(lmer.varmodel)
@@ -690,9 +700,25 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 ```{r}
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 + (1 + W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 | Tm), data = train.df)
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 + (1 + WHIP + W.L..same_year + Age.pitch + H9 | Tm), data = train.df)
 # summary(lmer.varmodel)
 # predict(lmer.varmodel)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ Age.bat + PA + AB | Tm, data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ Age.bat + PA + AB + (1 + Age.bat + PA + AB | Tm) , data = train.df)
 RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
 RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
