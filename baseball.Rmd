@@ -632,6 +632,21 @@ varImpPlot(rf2, cex=0.5)
 ```
 
 ```{r}
+tab <- matrix(c(RMSE.tree1.train, RMSE.tree1.test,
+  RMSE.tree2.train, RMSE.tree2.test,
+  RMSE.bag.train, RMSE.bag.test,
+  RMSE.rf1.train, RMSE.rf1.test,
+  RMSE.rf2.train, RMSE.rf2.test,
+  RMSE.tree4.train, RMSE.tree4.test), nrow=6, byrow = TRUE
+)
+colnames(tab) <- c('train','test')
+rownames(tab) <- c('tree1','tree2','bag', 'rf1', 'rf2', 'tree4')
+tab <- as.table(tab)
+tab
+```
+
+
+```{r}
 library(lme4)
 set.seed(139)
 
