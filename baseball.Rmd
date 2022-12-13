@@ -431,6 +431,7 @@ data.frame(train=RMSE.tree1.train,test=RMSE.tree1.test)
 ```
 
 ```{r}
+set.seed(139)
 best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
 tree2 = prune(tree1,best.cp)
 yhat.tree2.train = predict(tree2)
@@ -440,6 +441,7 @@ RMSE.tree2.test = RMSE(test.df$W.L..next_year,yhat.tree2.test)
 data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```
 ```{r}
+set.seed(139)
 tree3 = rpart(W.L..next_year~W.L..same_year + Age.pitch + WHIP,
               data=train.df, control = list(minsplit=1, cp=0, maxdepth=20))
 yhat.tree3.train = predict(tree3)
@@ -449,6 +451,7 @@ RMSE.tree3.test = RMSE(test.df$W.L..next_year,yhat.tree3.test)
 data.frame(train=RMSE.tree3.train,test=RMSE.tree3.test)
 ```
 ```{r}
+set.seed(139)
 best.cp = tree3$cptable[,"CP"][which.min(tree3$cptable[,"xerror"])]
 tree4 = prune(tree3,best.cp)
 yhat.tree4.train = predict(tree4)
@@ -489,7 +492,6 @@ data.frame(train=RMSE.bag.train,test=RMSE.bag.test)
 
 ```{r}
 library(randomForest)
-library(varImp)
 set.seed(139)
 maxnodes = c(100,200,500)
 mtry = c(15, 25, 35, 45, 55)
@@ -649,12 +651,12 @@ lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
 ```
 
 ```{r}
-barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.4, main='Variable Importance for Pruned Decision Tree with all predictors')
-varImpPlot(bag, cex=0.5)
-varImpPlot(rf1,cex=0.5)
+barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.4, main='Variable Importance for tree2')
+varImpPlot(bag, cex=0.5, main='Variable Importance for bag')
+varImpPlot(rf1,cex=0.5, main='Variable Importance for rf1')
 
-barplot(sort(tree4$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for Pruned Decision Tree with 3 predictors')
-varImpPlot(rf2, cex=0.5)
+barplot(sort(tree4$variable.importance),horiz = T,las=2,cex.names = 0.6, main='Variable Importance for tree4')
+varImpPlot(rf2, cex=0.5, main='Variable Importance for rf2')
 ```
 
 ```{r}
