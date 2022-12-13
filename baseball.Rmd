@@ -268,10 +268,13 @@ library(glmnet)
 library(caret)
 # regularize full model
 X.full = model.matrix(lm.full)[,-1] # drop intercept
-best_lambda = cv.glmnet(X.full, train.df$W.L..next_year, alpha=0, lambda=10^seq(-4, 4, 0.1))$lambda.min
+best_lambda = cv.glmnet(X.full, train.df$W.L..next_year, alpha=0, lambda=10^seq(-4, 4, 0.1))$lambda.min; best_lambda
 ridges.full = glmnet(X.full, train.df$W.L..next_year, alpha=0, 
                      lambda=best_lambda)
-varImp(ridges.full, lambda=best_lambda)
+imp <- as.data.frame(varImp(ridges.full, lambda=best_lambda))
+imp <- data.frame(overall = imp$Overall,
+           names = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
 X.full.test = model.matrix(lm.full, data=test.df)[,-1] # drop intercept
 
 yhats.full.train = predict(ridges.full, X.full)
@@ -290,9 +293,13 @@ set.seed(139)
 X.fullinteraction = model.matrix(lm.fullinteraction)[,-1] # drop intercept
 
 best_lambda = cv.glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=0, 
-                        lambda=10^seq(-4, 4, 0.1))$lambda.min
+                        lambda=10^seq(-4, 4, 0.1))$lambda.min; best_lambda
 ridges.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=0, 
                      lambda=best_lambda)
+imp <- as.data.frame(varImp(ridges.fullinteraction, lambda=best_lambda))
+imp <- data.frame(overall = imp$Overall,
+           names = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
 X.fullinteraction.test = model.matrix(lm.fullinteraction, data=test.df)[,-1] # drop intercept
 
 yhats.fullinteraction.train = predict(ridges.fullinteraction, X.fullinteraction)
@@ -310,10 +317,13 @@ ridgesfullinteraction.testR2 = R2(test.df$W.L..next_year, yhats.fullinteraction.
 # regularize full model
 set.seed(139)
 best_lambda = cv.glmnet(X.full, train.df$W.L..next_year, alpha=1, 
-                        lambda=10^seq(-4, 4, 0.1))$lambda.min
+                        lambda=10^seq(-4, 4, 0.1))$lambda.min; best_lambda
 lassos.full = glmnet(X.full, train.df$W.L..next_year, alpha=1, 
                      lambda=best_lambda)
-varImp(lassos.full, lambda=best_lambda)
+imp <- as.data.frame(varImp(lassos.full, lambda=best_lambda))
+imp <- data.frame(overall = imp$Overall,
+           names = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
 yhats.full.train = predict(lassos.full, X.full)
 lassosfull.trainRMSE = RMSE(train.df$W.L..next_year, yhats.full.train) # train RMSE
 lassosfull.trainR2 = R2(train.df$W.L..next_year, yhats.full.train) # train R2
@@ -328,9 +338,13 @@ lassosfull.testR2 = R2(test.df$W.L..next_year, yhats.full.test) # test RMSE
 # regularize full interaction model
 set.seed(139)
 best_lambda = cv.glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=1, 
-                        lambda=10^seq(-4, 4, 0.1))$lambda.min
+                        lambda=10^seq(-4, 4, 0.1))$lambda.min; best_lambda
 lassos.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alpha=1, 
                      lambda=best_lambda)
+imp <- as.data.frame(varImp(lassos.fullinteraction, lambda=best_lambda))
+imp <- data.frame(overall = imp$Overall,
+           names = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
 yhats.fullinteraction.train = predict(lassos.fullinteraction, X.fullinteraction)
 lassosfullinteraction.trainRMSE = RMSE(train.df$W.L..next_year, yhats.fullinteraction.train) # train RMSE
 lassosfullinteraction.trainR2 = R2(train.df$W.L..next_year, yhats.fullinteraction.train) # train R2
@@ -346,11 +360,16 @@ lassosfullinteraction.testR2 = R2(test.df$W.L..next_year, yhats.fullinteraction.
 lm.step = step(lm.full, scope=c(lower=formula(W.L..next_year~1), 
                                 upper=lm.fullinteraction), trace=0, direction="both")
 formula(lm.step)
+imp <- as.data.frame(varImp(lm.step))
+imp <- data.frame(overall = imp$Overall,
+           names = rownames(imp))
+imp[order(imp$overall,decreasing = T),]
 lmstep.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.step, newdata=train.df))
 lmstep.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.step, newdata=test.df))
 lmstep.trainR2 = R2(train.df$W.L..next_year, predict(lm.step, newdata=train.df))
 lmstep.testR2 = R2(test.df$W.L..next_year, predict(lm.step, newdata=test.df))
 ```
+
 
 ```{r}
 # model comparison
