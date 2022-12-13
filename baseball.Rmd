@@ -516,7 +516,9 @@ yhat.rf1.test = predict(rf1, newdata = test.df)
 RMSE.rf1.train = RMSE(train.df$W.L..next_year,yhat.rf1.train)
 RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
-importance(rf1)
+# imp <- as.data.frame(varImp(rf1))
+# imp <- data.frame(overall = imp$Overall, names = rownames(imp))
+# imp[order(imp$overall, decreasing = T),]
 ```
 
 ```{r}
@@ -548,6 +550,9 @@ RMSE.rf2.train = RMSE(train.df$W.L..next_year,yhat.rf2.train)
 RMSE.rf2.test = RMSE(test.df$W.L..next_year,yhat.rf2.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf2.test)
 importance(rf2)
+# imp <- as.data.frame(varImp(rf2))
+# imp <- data.frame(overall = imp$Overall, names = rownames(imp))
+# imp[order(imp$overall, decreasing = T),]
 ```
 
 ```{r}
@@ -757,3 +762,111 @@ RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
 RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
+
+**RIDGE full**
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ OBP + Fld. + BA + (1 + OBP + Fld. + BA | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ OBP + Fld. + BA | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+**RIDGE full interaction**
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ Fld. + OBP:Fld. + BA:OBP + (1 + Fld. + OBP:Fld. + BA:OBP | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ Fld. + OBP:Fld. + BA:OBP | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+**LASSO full**
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ OBP + WHIP + Fld. + (1 + OBP + WHIP + Fld. | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ OBP + WHIP + Fld. | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+**LASSO full interaction **
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ SHO:IBB.pitch + OBP:Age.pitch + BK:HR9 + (1 + SHO:IBB.pitch + OBP:Age.pitch + BK:HR9 | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ SHO:IBB.pitch + OBP:Age.pitch + BK:HR9 | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+
+**Random Forest 1 and Random Forest 2**
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + Age.pitch | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + Age.pitch + (1 + W.L..same_year + WHIP + Age.pitch | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+**Prunded Decision tree with 3 Predictors**
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + Age.pitch | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + Age.pitch + (1 + W.L..same_year + WHIP + Age.pitch | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+**Pruned Decision tree with all predictors**
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + H9 | Tm , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
+
+```{r}
+set.seed(139)
+lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + H9 + (1 + W.L..same_year + WHIP + H9 | Tm) , data = train.df)
+RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
+RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
+```
