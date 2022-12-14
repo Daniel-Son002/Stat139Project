@@ -286,7 +286,7 @@ ridges.full = glmnet(X.full, train.df$W.L..next_year, alpha=0,
 imp <- as.data.frame(varImp(ridges.full, lambda=best_lambda))
 imp <- data.frame(overall = imp$Overall,
            names = rownames(imp))
-imp[order(imp$overall,decreasing = T),]
+imp[order(imp$overall,decreasing = T),][1:10,]
 X.full.test = model.matrix(lm.full, data=test.df)[,-1] # drop intercept
 
 yhats.full.train = predict(ridges.full, X.full)
@@ -311,7 +311,7 @@ ridges.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alph
 imp <- as.data.frame(varImp(ridges.fullinteraction, lambda=best_lambda))
 imp <- data.frame(overall = imp$Overall,
            names = rownames(imp))
-imp[order(imp$overall,decreasing = T),]
+imp[order(imp$overall,decreasing = T),][1:10,]
 X.fullinteraction.test = model.matrix(lm.fullinteraction, data=test.df)[,-1] # drop intercept
 
 yhats.fullinteraction.train = predict(ridges.fullinteraction, X.fullinteraction)
@@ -336,7 +336,7 @@ lassos.full = glmnet(X.full, train.df$W.L..next_year, alpha=1,
 imp <- as.data.frame(varImp(lassos.full, lambda=best_lambda))
 imp <- data.frame(overall = imp$Overall,
            names = rownames(imp))
-imp[order(imp$overall,decreasing = T),]
+imp[order(imp$overall,decreasing = T),][1:10,]
 yhats.full.train = predict(lassos.full, X.full)
 lassosfull.trainRMSE = RMSE(train.df$W.L..next_year, yhats.full.train) # train RMSE
 lassosfull.trainR2 = R2(train.df$W.L..next_year, yhats.full.train) # train R2
@@ -358,7 +358,7 @@ lassos.fullinteraction = glmnet(X.fullinteraction, train.df$W.L..next_year, alph
 imp <- as.data.frame(varImp(lassos.fullinteraction, lambda=best_lambda))
 imp <- data.frame(overall = imp$Overall,
            names = rownames(imp))
-imp[order(imp$overall,decreasing = T),]
+imp[order(imp$overall,decreasing = T),][1:10,]
 yhats.fullinteraction.train = predict(lassos.fullinteraction, X.fullinteraction)
 lassosfullinteraction.trainRMSE = RMSE(train.df$W.L..next_year, yhats.fullinteraction.train) # train RMSE
 lassosfullinteraction.trainR2 = R2(train.df$W.L..next_year, yhats.fullinteraction.train) # train R2
@@ -378,7 +378,7 @@ formula(lm.step)
 imp <- as.data.frame(varImp(lm.step))
 imp <- data.frame(overall = imp$Overall,
            names = rownames(imp))
-imp[order(imp$overall,decreasing = T),]
+imp[order(imp$overall,decreasing = T),][1:10,]
 lmstep.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.step, newdata=train.df))
 lmstep.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.step, newdata=test.df))
 lmstep.trainR2 = R2(train.df$W.L..next_year, predict(lm.step, newdata=train.df))
@@ -537,7 +537,7 @@ RMSE.rf1.test = RMSE(test.df$W.L..next_year,yhat.rf1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.rf1.test)
 # imp <- as.data.frame(varImp(rf1))
 # imp <- data.frame(overall = imp$Overall, names = rownames(imp))
-# imp[order(imp$overall, decreasing = T),]
+# imp[order(imp$overall, decreasing = T),][1:10,]
 ```
 
 ```{r, cache=TRUE}
@@ -571,7 +571,7 @@ data.frame(train=RMSE.tree1.train,test=RMSE.rf2.test)
 importance(rf2)
 # imp <- as.data.frame(varImp(rf2))
 # imp <- data.frame(overall = imp$Overall, names = rownames(imp))
-# imp[order(imp$overall, decreasing = T),]
+# imp[order(imp$overall, decreasing = T),][1:10,]
 ```
 
 ```{r, cache=TRUE}
