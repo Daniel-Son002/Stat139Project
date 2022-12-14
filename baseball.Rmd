@@ -224,6 +224,7 @@ R2 <- function(y,yhat) {
   r.squared <- 1 - (SSE / SST)
   return(r.squared)
 }
+# baseline RMSEs and R squared values
 baseline.trainRMSE = RMSE(train.df$W.L..next_year, predict(baseline, newdata=train.df))
 baseline.testRMSE = RMSE(test.df$W.L..next_year, predict(baseline, newdata=test.df))
 baseline.trainR2 = R2(train.df$W.L..next_year, predict(baseline, newdata=train.df))
@@ -253,6 +254,7 @@ lm.full <- lm(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B +
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas,
               data = train.df)
+# full linear model RMSEs and R squared values
 lmfull.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
 lmfull.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.full, newdata=test.df))
 lmfull.trainR2 = R2(train.df$W.L..next_year, predict(lm.full, newdata=train.df))
@@ -266,6 +268,7 @@ lm.fullinteraction <- lm(W.L..next_year ~ (Age.bat + PA + AB + H.bat + X2B + X3B
                 FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 G + Inn + Ch + PO + A + E + DP + Fld. + 
                 RF.9 + RF.G + tot_fa_war3 + num_fas)^2, data = train.df)
+# full linear model with interaction terms RMSEs and R squared values
 lmfullinteraction.trainRMSE = RMSE(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
 lmfullinteraction.testRMSE = RMSE(test.df$W.L..next_year, predict(lm.fullinteraction, newdata=test.df))
 lmfullinteraction.trainR2 = R2(train.df$W.L..next_year, predict(lm.fullinteraction, newdata=train.df))
@@ -432,6 +435,7 @@ RMSE.df
 ```{r, cache=TRUE}
 set.seed(139)
 library(rpart)
+# Tree 1
 
 RMSE = function(y,yhat){
   return(sqrt(mean((y-yhat)^2)))
@@ -445,8 +449,10 @@ RMSE.tree1.train = RMSE(train.df$W.L..next_year,yhat.tree1.train)
 RMSE.tree1.test = RMSE(test.df$W.L..next_year,yhat.tree1.test)
 data.frame(train=RMSE.tree1.train,test=RMSE.tree1.test)
 ```
+
 ```{r, cache=TRUE}
 set.seed(139)
+# Tree prune
 best.cp = tree1$cptable[,"CP"][which.min(tree1$cptable[,"xerror"])]
 tree2 = prune(tree1,best.cp)
 yhat.tree2.train = predict(tree2)
@@ -459,6 +465,7 @@ data.frame(train=RMSE.tree2.train,test=RMSE.tree2.test)
 ```{r, cache=TRUE}
 set.seed(139)
 library(randomForest)
+# Bag model
 
 maxnodes = c(100,200,500)
 ntree= 200
@@ -486,6 +493,7 @@ data.frame(train=RMSE.bag.train,test=RMSE.bag.test)
 
 ```{r, cache=TRUE}
 library(randomForest)
+# Random forest model 1
 set.seed(139)
 maxnodes = c(100,200,500)
 mtry = c(15, 25, 35, 45, 55)
@@ -517,6 +525,7 @@ importance(rf1)
 
 ```{r, cache=TRUE}
 library(randomForest)
+# Random forest model 2
 set.seed(139)
 maxnodes = c(100,200,500)
 mtry = c(1,3,5)
@@ -557,6 +566,7 @@ RMSE.tree3.test = RMSE(test.df$W.L..next_year,yhat.tree3.test)
 data.frame(train=RMSE.tree3.train,test=RMSE.tree3.test)
 ```
 ```{r, cache=TRUE}
+# Pruning
 set.seed(139)
 best.cp = tree3$cptable[,"CP"][which.min(tree3$cptable[,"xerror"])]
 tree4 = prune(tree3,best.cp)
@@ -667,6 +677,7 @@ lines(mean_yhat.rf~dummyx,col=rgb(0,0.5,0,1),lwd=3)
 ```
 
 ```{r}
+# Variable importance for rf1 and rf2
 set.seed(139)
 barplot(sort(tree2$variable.importance),horiz = T,las=2,cex.names = 0.4, main='Variable Importance for tree2')
 varImpPlot(bag, cex=0.5, main='Variable Importance for bag')
@@ -677,6 +688,7 @@ varImpPlot(rf2, cex=0.5, main='Variable Importance for rf2')
 ```
 
 ```{r, cache=TRUE}
+# RMSEs of Trees
 set.seed(139)
 tab <- matrix(c(RMSE.tree1.train, RMSE.tree1.test,
   RMSE.tree2.train, RMSE.tree2.test,
@@ -717,72 +729,6 @@ summary(lmer_model)
                 # FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W + 
                 # G + Inn + Ch + PO + A + E + DP + Fld. + 
                 # RF.9 + RF.G + tot_fa_war3 + num_fas || Tm, data = train.df, verbose=TRUE)
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-summary(lmer_model)
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + (1 + WHIP + W.L..same_year + Age.pitch | Tm), data = train.df)
-# summary(lmer.varmodel)
-# predict(lmer.varmodel)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch | Tm, data = train.df)
-# summary(lmer.varmodel)
-# predict(lmer.varmodel)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + tot_fa_war3 | Tm, data = train.df)
-# summary(lmer.varmodel)
-# predict(lmer.varmodel)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 | Tm, data = train.df)
-# summary(lmer.varmodel)
-# predict(lmer.varmodel)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + H9 + (1 + WHIP + W.L..same_year + Age.pitch + H9 | Tm), data = train.df)
-# summary(lmer.varmodel)
-# predict(lmer.varmodel)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ Age.bat + PA + AB | Tm, data = train.df)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ Age.bat + PA + AB + (1 + Age.bat + PA + AB | Tm) , data = train.df)
-RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 
@@ -891,14 +837,14 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 **Bag**
 ```{r, cache=TRUE}
 set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + tot_fa_war3 + IBB.bat + (1 + W.L..same_year + Age.pitch + tot_fa_war3 + IBB.bat | Tm), data = train.df)
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + H9 + tot_fa_war3 + SV + (1 + WHIP + W.L..same_year + H9 + tot_fa_war3 + SV | Tm), data = train.df)
 RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
 RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 ```{r, cache=TRUE}
 set.seed(139)
-lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + Age.pitch + tot_fa_war3 + IBB.bat + (1 | Tm), data = train.df)
+lmer.varmodel <- lmer(W.L..next_year ~ WHIP + W.L..same_year + H9 + tot_fa_war3 + SV + (1 | Tm), data = train.df)
 RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
 RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
@@ -949,7 +895,7 @@ RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
 
 
-**Testing stuff**
+**Testing other possibly important variables**
 
 ```{r, cache=TRUE}
 set.seed(139)
@@ -970,11 +916,4 @@ set.seed(139)
 lmer.varmodel <- lmer(W.L..next_year ~ W.L..same_year + WHIP + H9 + SV + tot_fa_war3 + (1 | Tm) , data = train.df)
 RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
 RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
-```
-
-```{r, cache=TRUE}
-set.seed(139)
-# lmer.varmodel <- lmer(W.L..next_year ~ Age.bat + PA + AB + H.bat + X2B + X3B + HR.bat + SB + CS + BB.bat + SO.bat + BA + OBP + SLG + OPS + OPSplus + TB + GDP + HBP.bat + SH + SF + IBB.bat + Age.pitch + W.L..same_year + GF + SHO + SV + IP + H.pitch + HR.pitch + BB.pitch + IBB.pitch + SO.pitch + HBP.pitch + BK + WP + BF + FIP + WHIP + H9 + HR9 + BB9 + SO9 + SO.W +  G + Inn + Ch + PO + A + E + DP + Fld. + RF.9 + RF.G + tot_fa_war3 + num_fas || Tm , data = train.df)
-# RMSE(train.df$W.L..next_year, predict(lmer.varmodel))
-# RMSE(test.df$W.L..next_year, predict(lmer.varmodel, newdata=test.df))
 ```
